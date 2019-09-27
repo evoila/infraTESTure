@@ -1,0 +1,21 @@
+---
+deployment_name: <deployment_name>
+service:
+  name: <service_name>
+  credentials:
+    username: <username>
+    password: <password>
+    certificate: <certificate>
+    token: <token>
+testing:
+  infrastructure: <infrastructure_name>
+  tests:
+    - name: health
+      # more test specific config soon
+    - name: service
+    - name: failover
+bosh:
+  uaa_url: <uaa_url>
+  director_url: <director_url>
+  uaa_client: <uaa_client>
+  uaa_client_secret: <uua_client_secret>
