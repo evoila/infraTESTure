@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/evoila/infra-tests/redis/service"
 	"github.com/evoila/infraTESTure/bosh"
 	"github.com/evoila/infraTESTure/config"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	"log"
+	"math/rand"
 	"os"
 )
 
@@ -27,7 +29,7 @@ func commands() {
 			Aliases: []string{"i"},
 			Usage: "Information about what tests are enabled for what services",
 			Action: func(c *cli.Context) {
-				//TODO: Implementieren
+				//TODO: infra-tests directory tree print
 			},
 		},
 		{
@@ -48,13 +50,15 @@ func commands() {
 				config, err := config.LoadConfig(c.String("config"))
 
 				if err != nil {
-					log.Fatal(err)
+					log.Printf("[ERROR] %v", err)
 				}
+
+				bosh.InitInfrastructureValues(config)
 
 				for _, test := range config.Testing.Tests {
 					switch test.Name {
 					case "health":
-						health := bosh.IsDeploymentRunning(config)
+						health := bosh.IsDeploymentRunning()
 						fmt.Printf("\nDeployment %v is ", config.DeploymentName)
 						if  health {
 							color.Green("healthy")
@@ -62,11 +66,35 @@ func commands() {
 							color.Red("not healthy")
 						}
 					case "service":
-						log.Println("Coming soon...")
-						//TODO: Implementieren
+						err := service.TestService(config, bosh.GetIPs)
+						fmt.Printf("\nInserting and deleting data to redis was ")
+						if err == nil {
+							color.Green("successful")
+						} else{
+							color.Red("unsuccessful")
+							log.Printf("[ERROR] %v", err)
+						}
 					case "failover":
-						log.Println("Coming soon...")
-						//TODO: Implementieren
+						//TODO: Check how many vms exists & create a random number based on that
+						index := rand.Intn(3)
+						fmt.Println(index)
+						bosh.Stop(index)
+						err := service.TestService(config, bosh.GetIPs)
+						fmt.Printf("\nInserting and deleting data to redis was ")
+						if err == nil {
+							color.Green("successful")
+						} else{
+							color.Red("unsuccessful")
+							log.Printf("[ERROR] %v", err)
+						}
+						bosh.Start(index)
+						health := bosh.IsDeploymentRunning()
+						fmt.Printf("\nDeployment %v is ", config.DeploymentName)
+						if  health {
+							color.Green("healthy")
+						} else {
+							color.Red("not healthy")
+						}
 					}
 
 					fmt.Printf("\n##########\n\n")
@@ -82,6 +110,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("[ERROR] %v", err)
 	}
 }

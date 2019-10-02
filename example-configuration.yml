@@ -2,6 +2,7 @@
 deployment_name: <deployment_name>
 service:
   name: <service_name>
+  port: <port>
   credentials:
     username: <username>
     password: <password>
@@ -10,10 +11,10 @@ service:
 testing:
   infrastructure: <infrastructure_name>
   tests:
-    - name: health
-      # more test specific config soon
-    - name: service
-    - name: failover
+  - name: health
+  # more test specific config soon
+  - name: service
+  - name: failover
 bosh:
   uaa_url: <uaa_url>
   director_url: <director_url>

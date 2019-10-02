@@ -15,6 +15,7 @@ type Config struct {
 
 type Service struct {
 	Name string `yaml:"name"`
+	Port int `yaml:"port"`
 	Credentials Credentials `yaml:"credentials"`
 }
 
