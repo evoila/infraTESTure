@@ -1,15 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"github.com/evoila/infra-tests/redis/service"
-	"github.com/evoila/infraTESTure/bosh"
 	"github.com/evoila/infraTESTure/config"
+	"github.com/evoila/infraTESTure/infrastructure"
+	"github.com/evoila/infraTESTure/infrastructure/bosh"
+	"github.com/evoila/infraTESTure/parser"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
 	"log"
-	"math/rand"
 	"os"
+	"os/exec"
+	"plugin"
 )
 
 var app = cli.NewApp()
@@ -47,61 +48,68 @@ func commands() {
 				},
 			},
 			Action: func(c *cli.Context) {
-				config, err := config.LoadConfig(c.String("config"))
+				conf, err := config.LoadConfig(c.String("config"))
 
 				if err != nil {
-					log.Printf("[ERROR] %v", err)
+					logError(err, "")
 				}
 
-				bosh.InitInfrastructureValues(config)
+				bosh.InitInfrastructureValues(conf)
 
-				for _, test := range config.Testing.Tests {
-					switch test.Name {
-					case "health":
-						health := bosh.IsDeploymentRunning()
-						fmt.Printf("\nDeployment %v is ", config.DeploymentName)
-						if  health {
-							color.Green("healthy")
-						} else {
-							color.Red("not healthy")
-						}
-					case "service":
-						err := service.TestService(config, bosh.GetIPs)
-						fmt.Printf("\nInserting and deleting data to redis was ")
-						if err == nil {
-							color.Green("successful")
-						} else{
-							color.Red("unsuccessful")
-							log.Printf("[ERROR] %v", err)
-						}
-					case "failover":
-						//TODO: Check how many vms exists & create a random number based on that
-						index := rand.Intn(3)
-						fmt.Println(index)
-						bosh.Stop(index)
-						err := service.TestService(config, bosh.GetIPs)
-						fmt.Printf("\nInserting and deleting data to redis was ")
-						if err == nil {
-							color.Green("successful")
-						} else{
-							color.Red("unsuccessful")
-							log.Printf("[ERROR] %v", err)
-						}
-						bosh.Start(index)
-						health := bosh.IsDeploymentRunning()
-						fmt.Printf("\nDeployment %v is ", config.DeploymentName)
-						if  health {
-							color.Green("healthy")
-						} else {
-							color.Red("not healthy")
-						}
+				//TODO: Check if repository already exists
+				log.Printf("[INFO] Cloning repository from %v\n", conf.TestRepo)
+				cmd := exec.Command("bash", "-c", "git clone " + conf.TestRepo + " .tmp/infra-tests")
+				err = cmd.Run()
+
+				if err != nil {
+					logError(err, "Could not clone repository")
+				}
+
+				serviceDir := ".tmp/infra-tests/" + conf.Service.Name
+
+				log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
+				cmd = exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
+				err = cmd.Run()
+
+				if err != nil {
+					logError(err, "Could not build go plugin")
+				}
+
+				log.Printf("[INFO] Loading go plugin...")
+				p, err := plugin.Open(serviceDir + "/" + conf.Service.Name + ".so")
+
+				if err != nil {
+					logError(err, "Could not load go plugin")
+				}
+
+				methodNames, err := parser.GetMethodNames(conf.Testing.Tests, serviceDir + "/" + conf.Service.Name + ".go")
+
+				if err != nil {
+					logError(err, "")
+				}
+
+				for _, method := range methodNames {
+					symbol, err := p.Lookup(method)
+
+					if err != nil {
+						logError(err, "")
 					}
 
-					fmt.Printf("\n##########\n\n")
+					fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure))
+
+					if !ok {
+						panic(ok)
+					}
+
+					fun(conf, bosh.Bosh{})
 				}
 			},
 		},
 	}
+}
+
+func logError(err error, customMessage string) {
+	log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
 }
 
 func main() {

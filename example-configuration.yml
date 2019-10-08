@@ -1,5 +1,6 @@
 ---
 deployment_name: <deployment_name>
+test_repo: <link_to_own_test_repo>
 service:
   name: <service_name>
   port: <port>
