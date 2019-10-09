@@ -9,6 +9,7 @@ import (
 type Config struct {
 	DeploymentName string `yaml:"deployment_name"`
 	TestRepo string `yaml:"test_repo"`
+	RepoName string `yaml:"repo_name"`
 	Service Service `yaml:"service"`
 	Testing Testing `yaml:"testing"`
 	Bosh Bosh `yaml:"bosh"`

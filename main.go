@@ -56,19 +56,22 @@ func commands() {
 
 				bosh.InitInfrastructureValues(conf)
 
-				//TODO: Check if repository already exists
-				log.Printf("[INFO] Cloning repository from %v\n", conf.TestRepo)
-				cmd := exec.Command("bash", "-c", "git clone " + conf.TestRepo + " .tmp/infra-tests")
-				err = cmd.Run()
+				if _, err := os.Stat(".tmp/" + conf.RepoName); os.IsNotExist(err) {
+					log.Printf("[INFO] Cloning repository from %v\n", conf.TestRepo)
+					cmd := exec.Command("bash", "-c", "git clone " + conf.TestRepo + " .tmp/" + conf.RepoName)
+					err = cmd.Run()
+				} else {
+					log.Printf("[INFO] Using existing repository %v\n", conf.RepoName)
+				}
 
 				if err != nil {
 					logError(err, "Could not clone repository")
 				}
 
-				serviceDir := ".tmp/infra-tests/" + conf.Service.Name
+				serviceDir := ".tmp/" + conf.RepoName + "/" + conf.Service.Name
 
 				log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
-				cmd = exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
+				cmd := exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
 				err = cmd.Run()
 
 				if err != nil {
