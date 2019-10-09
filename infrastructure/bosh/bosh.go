@@ -6,6 +6,7 @@ import (
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/fatih/color"
 	"log"
+	"math"
 	"strconv"
 )
 
@@ -29,7 +30,6 @@ func InitInfrastructureValues(config *config.Config) {
 	}
 }
 
-// TODO: Wait for task completion
 func (b Bosh) Stop(id string) {
 	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StopOpts{
 		Canaries:    "1",
@@ -42,7 +42,6 @@ func (b Bosh) Stop(id string) {
 	}
 }
 
-// TODO: Wait for task completion
 func (b Bosh) Start(id string) {
 	// Restart a stopped VM
 	err := deployment.Restart(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.RestartOpts{
@@ -91,10 +90,11 @@ func (b Bosh) GetDeployment() infrastructure.Deployment {
 			ServiceName:           vmVital.JobName,
 			ID:                    vmVital.ID,
 			State:                 vmVital.ProcessState,
-			DiskSize:              0,
-			CpuUsage:          	   stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys),
+			//TODO: find out how to get disk size
+			CpuUsage:          	   math.Round(stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys)),
 			MemoryUsagePercentage: stringToFloat(vmVital.Vitals.Mem.Percent),
 			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
+			DiskSize:			   0,
 			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["system"].Percent) +
 				                   stringToFloat(vmVital.Vitals.Disk["ephemeral"].Percent) +
 								   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
