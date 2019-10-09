@@ -53,7 +53,7 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal([]byte(data), &config)
+	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		log.Fatalf("[ERROR]: %v", err)
 		return nil, err

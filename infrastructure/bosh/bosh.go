@@ -14,8 +14,10 @@ type Bosh struct {}
 func InitInfrastructureValues(config *config.Config) {
 	deploymentName = config.DeploymentName
 
+	var err error
+
 	// Create a bosh director to get the deployment
-	boshDirector, err := buildDirector(config)
+	boshDirector, err = buildDirector(config)
 	if err != nil {
 		logError(err, "")
 	}
@@ -29,7 +31,11 @@ func InitInfrastructureValues(config *config.Config) {
 
 // TODO: Wait for task completion
 func (b Bosh) Stop(id string) {
-	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StopOpts{})
+	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StopOpts{
+		Canaries:    "1",
+		MaxInFlight: "3",
+		Converge:    true,
+	})
 
 	if err != nil {
 		logError(err, "")
@@ -39,7 +45,11 @@ func (b Bosh) Stop(id string) {
 // TODO: Wait for task completion
 func (b Bosh) Start(id string) {
 	// Restart a stopped VM
-	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StartOpts{})
+	err := deployment.Restart(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.RestartOpts{
+		Canaries:    "1",
+		MaxInFlight: "3",
+		Converge:    true,
+	})
 
 	if err != nil {
 		logError(err, "")

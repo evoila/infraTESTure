@@ -7,6 +7,7 @@ import (
 	"github.com/evoila/infraTESTure/config"
 )
 
+var boshDirector director.Director
 var deployment director.Deployment
 var deploymentName string
 
