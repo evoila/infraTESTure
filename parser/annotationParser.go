@@ -17,9 +17,9 @@ func GetMethodNames(tests []config.Test, path string) ([]string, error) {
 		return nil, err
 	}
 
-	for _, decl := range file.Decls {
-		if fun, ok := decl.(*ast.FuncDecl); ok {
-			for _, test := range tests {
+	for _, test := range tests {
+		for _, decl := range file.Decls {
+			if fun, ok := decl.(*ast.FuncDecl); ok {
 				if fun.Doc != nil && contains("@"+test.Name, fun.Doc.List) {
 					methodNames = append(methodNames, fun.Name.Name)
 				}
