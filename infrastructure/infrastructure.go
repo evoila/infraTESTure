@@ -1,8 +1,8 @@
 package infrastructure
 
 type Infrastructure interface {
-	Start(int)
-	Stop(int)
+	Start(string)
+	Stop(string)
 	GetIPs() []string
 	GetDeployment() Deployment
 	IsRunning() bool
@@ -20,6 +20,7 @@ type VM struct {
 	State string
 	DiskSize float64
 	CpuUsage float64
-	MemoryUsage float64
+	MemoryUsagePercentage float64
+	MemoryUsageTotal float64
 	DiskUsage float64
 }

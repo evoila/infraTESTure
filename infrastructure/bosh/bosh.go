@@ -27,23 +27,19 @@ func InitInfrastructureValues(config *config.Config) {
 	}
 }
 
-func (b Bosh) Stop(index int) {
-	// Stop one VM of the deployment
-	log.Printf("[INFO] Shutting down vm...")
-
-	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", strconv.Itoa(index)), director.StopOpts{})
+// TODO: Wait for task completion
+func (b Bosh) Stop(id string) {
+	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StopOpts{})
 
 	if err != nil {
 		logError(err, "")
 	}
 }
 
-func (b Bosh) Start(index int) {
+// TODO: Wait for task completion
+func (b Bosh) Start(id string) {
 	// Restart a stopped VM
-
-	log.Printf("[INFO] Restarting vm...")
-
-	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("redis", strconv.Itoa(index)), director.StartOpts{})
+	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StartOpts{})
 
 	if err != nil {
 		logError(err, "")
@@ -82,13 +78,16 @@ func (b Bosh) GetDeployment() infrastructure.Deployment {
 	// Check if one of the VMs has a different process state than "running"
 	for _, vmVital := range vmVitals {
 		vms = append(vms, infrastructure.VM{
-			ServiceName: vmVital.JobName,
-			ID:			 vmVital.ID,
-			State:       vmVital.ProcessState,
-			DiskSize:    0, //TODO
-			CpuUsage:    0, //TODO
-			MemoryUsage: 0, //TODO
-			DiskUsage:   0, //TODO
+			ServiceName:           vmVital.JobName,
+			ID:                    vmVital.ID,
+			State:                 vmVital.ProcessState,
+			DiskSize:              0,
+			CpuUsage:          	   stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys),
+			MemoryUsagePercentage: stringToFloat(vmVital.Vitals.Mem.Percent),
+			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
+			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["system"].Percent) +
+				                   stringToFloat(vmVital.Vitals.Disk["ephemeral"].Percent) +
+								   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
 		})
 	}
 
@@ -117,4 +116,14 @@ func (b Bosh) IsRunning() bool {
 
 func logError(err error, customMessage string) {
 	log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
+}
+
+func stringToFloat(value string) float64 {
+	floatValue, err := strconv.ParseFloat(value, 64)
+
+	if err != nil {
+		logError(err, "")
+	}
+
+	return floatValue
 }
