@@ -98,55 +98,67 @@ func commands() {
 
 				bosh.InitInfrastructureValues(conf)
 
-				if _, err := os.Stat(".tmp/" + conf.RepoName); os.IsNotExist(err) {
-					log.Printf("[INFO] Cloning repository from %v\n", conf.TestRepo)
-					cmd := exec.Command("bash", "-c", "git clone " + conf.TestRepo + " .tmp/" + conf.RepoName)
-					err = cmd.Run()
+				var repoPath string
+
+				if repoPath = appendSlash(os.TempDir()); conf.Github.SavingLocation != "" {
+					repoPath = appendSlash(conf.Github.SavingLocation)
+				}
+
+				repoPath += conf.Github.RepoName
+
+				if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+					log.Printf("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
+					gitClone(conf.Github.TestRepo, repoPath)
 				} else {
-					log.Printf("[INFO] Using existing repository %v\n", conf.RepoName)
+					log.Printf("[INFO] Using existing repository %v\n", repoPath)
 				}
 
-				if err != nil {
-					logError(err, "Could not clone repository")
-				}
+				serviceDir := repoPath + "/" + conf.Service.Name
 
-				serviceDir := ".tmp/" + conf.RepoName + "/" + conf.Service.Name
+				if c.Bool("edit") {
+					cmd := exec.Command("bash", "-c", "open -t " + appendSlash(serviceDir) + conf.Service.Name + ".go")
+					err = cmd.Run()
 
-				log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
-				cmd := exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
-				err = cmd.Run()
+					if err != nil {
+						logError(err, "Could not open test file")
+					}
+				} else {
+					log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
+					cmd := exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
+					err = cmd.Run()
 
-				if err != nil {
-					logError(err, "Could not build go plugin")
-				}
+					if err != nil {
+						logError(err, "Could not build go plugin")
+					}
 
-				log.Printf("[INFO] Loading go plugin...")
-				p, err := plugin.Open(serviceDir + "/" + conf.Service.Name + ".so")
+					log.Printf("[INFO] Loading go plugin...")
+					p, err := plugin.Open(serviceDir + "/" + conf.Service.Name + ".so")
 
-				if err != nil {
-					logError(err, "Could not load go plugin")
-				}
+					if err != nil {
+						logError(err, "Could not load go plugin")
+					}
 
-				methodNames, err := parser.GetMethodNames(conf.Testing.Tests, serviceDir + "/" + conf.Service.Name + ".go")
-
-				if err != nil {
-					logError(err, "")
-				}
-
-				for _, method := range methodNames {
-					symbol, err := p.Lookup(method)
+					methodNames, err := parser.GetMethodNames(conf.Testing.Tests, serviceDir + "/" + conf.Service.Name + ".go")
 
 					if err != nil {
 						logError(err, "")
 					}
 
-					fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure))
+					for _, method := range methodNames {
+						symbol, err := p.Lookup(method)
 
-					if !ok {
-						panic(ok)
+						if err != nil {
+							logError(err, "")
+						}
+
+						fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure))
+
+						if !ok {
+							panic(ok)
+						}
+
+						fun(conf, bosh.Bosh{})
 					}
-
-					fun(conf, bosh.Bosh{})
 				}
 			},
 		},
