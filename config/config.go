@@ -8,11 +8,16 @@ import (
 
 type Config struct {
 	DeploymentName string `yaml:"deployment_name"`
-	TestRepo string `yaml:"test_repo"`
-	RepoName string `yaml:"repo_name"`
+	Github Github `yaml:"github"`
 	Service Service `yaml:"service"`
 	Testing Testing `yaml:"testing"`
 	Bosh Bosh `yaml:"bosh"`
+}
+
+type Github struct {
+	TestRepo string `yaml:"test_repo"`
+	SavingLocation string `yaml:"saving_location""`
+	RepoName string `yaml:"repo_name""`
 }
 
 type Service struct {

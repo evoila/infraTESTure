@@ -7,10 +7,12 @@ import (
 	"github.com/evoila/infraTESTure/parser"
 	"github.com/fatih/color"
 	"github.com/urfave/cli"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"plugin"
+	"strings"
 )
 
 var app = cli.NewApp()
@@ -29,8 +31,48 @@ func commands() {
 			Name: "info",
 			Aliases: []string{"i"},
 			Usage: "Information about what tests are enabled for what services",
+			Flags: []cli.Flag {
+				cli.StringFlag{
+					Name:        "repository, r",
+					Usage:       "`URL` to the Repository from which you want to get test information",
+					Required:    true,
+				},
+			},
 			Action: func(c *cli.Context) {
-				//TODO: infra-tests directory tree print
+				url := c.String("repository")
+				tmpDir := appendSlash(os.TempDir()) + "infra-tmp"
+
+				gitClone(url, tmpDir)
+
+				log.Printf("The following services and tests were found in %v:\n\n", url)
+
+				dirs, err := ioutil.ReadDir(tmpDir)
+				if err != nil {
+					log.Fatal(err)
+				}
+				for _, dir := range dirs {
+					if dir.IsDir() {
+						goFiles, err := ioutil.ReadDir(appendSlash(tmpDir)+dir.Name())
+						if err != nil {
+							log.Fatal(err)
+						}
+
+						for _, goFile := range goFiles {
+							if goFile.Name() == dir.Name()+".go" {
+								log.Printf("├── %v", color.GreenString(dir.Name()))
+								parser.GetAnnotations(appendSlash(tmpDir)+dir.Name()+"/"+goFile.Name())
+							}
+						}
+					}
+
+				}
+
+				cmd := exec.Command("bash", "-c", "rm -rf " + tmpDir)
+				err = cmd.Run()
+
+				if err != nil {
+					logError(err, "Could not delete directory")
+				}
 			},
 		},
 		{
@@ -114,6 +156,23 @@ func commands() {
 func logError(err error, customMessage string) {
 	log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
 }
+
+func gitClone(url string, repoPath string) {
+	cmd := exec.Command("bash", "-c", "git clone " + url + " " + repoPath)
+	err := cmd.Run()
+
+	if err != nil {
+		logError(err, "Could not clone repository")
+	}
+}
+
+func appendSlash(dir string) string {
+	if !strings.HasSuffix(dir, "/") {
+		return dir + "/"
+	}
+	return dir
+}
+
 
 func main() {
 	info()

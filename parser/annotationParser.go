@@ -5,7 +5,9 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log"
 	"strings"
+	"unicode/utf8"
 )
 
 func GetMethodNames(tests []config.Test, path string) ([]string, error) {
@@ -28,6 +30,29 @@ func GetMethodNames(tests []config.Test, path string) ([]string, error) {
 	}
 
 	return methodNames, nil
+}
+
+func GetAnnotations(path string) ([]string, error) {
+	fileSet := token.NewFileSet()
+	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	comments := ast.NewCommentMap(fileSet, file, file.Comments).Comments()
+
+	for _, comment := range comments {
+		if strings.HasPrefix(comment.Text(), "@") {
+			log.Printf("│ \t├── %v", trim(comment.Text()))
+		}
+	}
+
+	return nil, nil
+}
+
+func trim(s string) string {
+	_, i := utf8.DecodeRuneInString(s)
+	return s[i:]
 }
 
 func contains(s string, e []*ast.Comment) bool {
