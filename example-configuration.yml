@@ -1,6 +1,9 @@
 ---
 deployment_name: <deployment_name>
-test_repo: <link_to_own_test_repo>
+  github:
+    test_repo: <githube_repo_url>
+    saving_location: <saving_location>
+    repo_name: <repo_name>
 service:
   name: <service_name>
   port: <port>
@@ -13,7 +16,6 @@ testing:
   infrastructure: <infrastructure_name>
   tests:
   - name: health
-  # more test specific config soon
   - name: service
   - name: failover
 bosh:

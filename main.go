@@ -157,7 +157,7 @@ func commands() {
 							panic(ok)
 						}
 
-						fun(conf, bosh.Bosh{})
+						fun(conf, &bosh.Bosh{})
 					}
 				}
 			},

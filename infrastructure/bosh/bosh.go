@@ -12,7 +12,11 @@ import (
 
 type Bosh struct {}
 
+var conf *config.Config
+
 func InitInfrastructureValues(config *config.Config) {
+	conf = config
+
 	deploymentName = config.DeploymentName
 
 	var err error
@@ -28,12 +32,11 @@ func InitInfrastructureValues(config *config.Config) {
 	if err != nil {
 		logError(err, "")
 	}
+
 }
 
-func (b Bosh) Stop(id string) {
-	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.StopOpts{
-		Canaries:    "1",
-		MaxInFlight: "3",
+func (b *Bosh) Stop(id string) {
+	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StopOpts{
 		Converge:    true,
 	})
 
@@ -42,11 +45,9 @@ func (b Bosh) Stop(id string) {
 	}
 }
 
-func (b Bosh) Start(id string) {
+func (b *Bosh) Start(id string) {
 	// Restart a stopped VM
-	err := deployment.Restart(director.NewAllOrInstanceGroupOrInstanceSlug("redis", id), director.RestartOpts{
-		Canaries:    "1",
-		MaxInFlight: "3",
+	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StartOpts{
 		Converge:    true,
 	})
 
@@ -55,7 +56,7 @@ func (b Bosh) Start(id string) {
 	}
 }
 
-func (b Bosh) GetIPs() []string {
+func (b *Bosh) GetIPs() map[string][]string {
 	// Get the ips of all VMs of a deployment
 
 	vmInfos, err := deployment.VMInfos()
@@ -64,18 +65,18 @@ func (b Bosh) GetIPs() []string {
 		logError(err, "")
 	}
 
-	var ips []string
+	ips := make(map[string][]string)
 
 	for _, vmInfo := range vmInfos {
 		for _, ip := range vmInfo.IPs {
-			ips = append(ips, ip)
+				ips[vmInfo.ID] = append(ips[vmInfo.ID], ip)
 		}
 	}
 
 	return ips
 }
 
-func (b Bosh) GetDeployment() infrastructure.Deployment {
+func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	vmVitals, err := deployment.VMInfos()
 
 	if err != nil {
@@ -89,11 +90,12 @@ func (b Bosh) GetDeployment() infrastructure.Deployment {
 		vms = append(vms, infrastructure.VM{
 			ServiceName:           vmVital.JobName,
 			ID:                    vmVital.ID,
+			IPs:				   vmVital.IPs,
 			State:                 vmVital.ProcessState,
-			//TODO: find out how to get disk size
 			CpuUsage:          	   math.Round(stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys)),
 			MemoryUsagePercentage: stringToFloat(vmVital.Vitals.Mem.Percent),
 			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
+			//TODO: find out how to get disk size
 			DiskSize:			   0,
 			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["system"].Percent) +
 				                   stringToFloat(vmVital.Vitals.Disk["ephemeral"].Percent) +
@@ -108,7 +110,7 @@ func (b Bosh) GetDeployment() infrastructure.Deployment {
 	}
 }
 
-func (b Bosh) IsRunning() bool {
+func (b *Bosh) IsRunning() bool {
 	vmVitals, err := deployment.VMInfos()
 
 	if err != nil {
