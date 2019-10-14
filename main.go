@@ -50,6 +50,7 @@ func commands() {
 				if err != nil {
 					log.Fatal(err)
 				}
+
 				for _, dir := range dirs {
 					if dir.IsDir() {
 						goFiles, err := ioutil.ReadDir(appendSlash(tmpDir)+dir.Name())
@@ -57,14 +58,16 @@ func commands() {
 							log.Fatal(err)
 						}
 
+						if !strings.HasPrefix(dir.Name(), ".") {
+							log.Printf("├── %v", color.GreenString(dir.Name()))
+						}
+
 						for _, goFile := range goFiles {
-							if goFile.Name() == dir.Name()+".go" {
-								log.Printf("├── %v", color.GreenString(dir.Name()))
+							if strings.HasSuffix(goFile.Name(), ".go") {
 								parser.GetAnnotations(appendSlash(tmpDir)+dir.Name()+"/"+goFile.Name())
 							}
 						}
 					}
-
 				}
 
 				cmd := exec.Command("bash", "-c", "rm -rf " + tmpDir)
@@ -89,6 +92,7 @@ func commands() {
 					Usage:       "Tells the tool if you want to edit the test code or not",
 				},
 			},
+
 			Action: func(c *cli.Context) {
 				conf, err := config.LoadConfig(c.String("config"))
 
@@ -138,7 +142,25 @@ func commands() {
 						logError(err, "Could not load go plugin")
 					}
 
-					methodNames, err := parser.GetMethodNames(conf.Testing.Tests, serviceDir + "/" + conf.Service.Name + ".go")
+					var methodNames []string
+
+					files, err := ioutil.ReadDir(serviceDir)
+
+					if err != nil {
+						logError(err, "Could not load service directory")
+					}
+
+					for _, file := range files {
+						if strings.HasSuffix(file.Name(), ".go") {
+							newMethodNames, err := parser.GetMethodNames(conf.Testing.Tests, appendSlash(serviceDir) + file.Name())
+
+							if err != nil {
+								logError(err, "")
+							}
+
+							methodNames = append(methodNames, newMethodNames...)
+						}
+					}
 
 					if err != nil {
 						logError(err, "")
