@@ -51,6 +51,8 @@ func commands() {
 					log.Fatal(err)
 				}
 
+				// Iterate through all directories and files inside these directories to get a list
+				// of all annotations, and therefore a list of all offered tests
 				for _, dir := range dirs {
 					if dir.IsDir() {
 						goFiles, err := ioutil.ReadDir(appendSlash(tmpDir)+dir.Name())
@@ -110,6 +112,9 @@ func commands() {
 
 				repoPath += conf.Github.RepoName
 
+				//TODO: Make it possible to overwrite a repository
+
+				// Check if the repository is already cloned, and if so use this repository
 				if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 					log.Printf("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
 					gitClone(conf.Github.TestRepo, repoPath)
@@ -119,6 +124,7 @@ func commands() {
 
 				serviceDir := repoPath + "/" + conf.Service.Name
 
+				// If the --edit flag is set open the test file instead of running the tests
 				if c.Bool("edit") {
 					cmd := exec.Command("bash", "-c", "open -t " + appendSlash(serviceDir) + conf.Service.Name + ".go")
 					err = cmd.Run()
@@ -127,6 +133,7 @@ func commands() {
 						logError(err, "Could not open test file")
 					}
 				} else {
+					// Build the given test repository as a go plugin
 					log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
 					cmd := exec.Command("bash", "-c", "cd " + serviceDir + " && go build -buildmode=plugin")
 					err = cmd.Run()
@@ -142,7 +149,7 @@ func commands() {
 						logError(err, "Could not load go plugin")
 					}
 
-					var methodNames []string
+					var functionNames []string
 
 					files, err := ioutil.ReadDir(serviceDir)
 
@@ -150,15 +157,17 @@ func commands() {
 						logError(err, "Could not load service directory")
 					}
 
+					// Get a list of all names of functions that has to be executed, based on if their annotations match the
+					// test names provided by the configuration.yml
 					for _, file := range files {
 						if strings.HasSuffix(file.Name(), ".go") {
-							newMethodNames, err := parser.GetMethodNames(conf.Testing.Tests, appendSlash(serviceDir) + file.Name())
+							newFunctionNames, err := parser.GetFunctionNames(conf.Testing.Tests, appendSlash(serviceDir) + file.Name())
 
 							if err != nil {
 								logError(err, "")
 							}
 
-							methodNames = append(methodNames, newMethodNames...)
+							functionNames = append(functionNames, newFunctionNames...)
 						}
 					}
 
@@ -166,8 +175,9 @@ func commands() {
 						logError(err, "")
 					}
 
-					for _, method := range methodNames {
-						symbol, err := p.Lookup(method)
+					// Use the plugin function "Lookup" the find and execute every function found in "GetFunctionNames"
+					for _, function := range functionNames {
+						symbol, err := p.Lookup(function)
 
 						if err != nil {
 							logError(err, "")

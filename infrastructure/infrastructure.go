@@ -1,5 +1,7 @@
 package infrastructure
 
+// Generic Infrastructure interface used by the actual test repository. This will be
+// initialized at the runtime
 type Infrastructure interface {
 	Start(string)
 	Stop(string)

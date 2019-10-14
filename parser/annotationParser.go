@@ -10,7 +10,8 @@ import (
 	"unicode/utf8"
 )
 
-func GetMethodNames(tests []config.Test, path string) ([]string, error) {
+// Return a list of all functions whose annotations match with the test names in the config
+func GetFunctionNames(tests []config.Test, path string) ([]string, error) {
 	var methodNames []string
 
 	fileSet := token.NewFileSet() // positions are relative to fileSet
@@ -19,6 +20,8 @@ func GetMethodNames(tests []config.Test, path string) ([]string, error) {
 		return nil, err
 	}
 
+	// Iterate through all function declarations to check if any annotation matches with the
+	// tests provided in the configuration.yml
 	for _, decl := range file.Decls {
 		for _, test := range tests {
 			if fun, ok := decl.(*ast.FuncDecl); ok {
@@ -32,6 +35,7 @@ func GetMethodNames(tests []config.Test, path string) ([]string, error) {
 	return methodNames, nil
 }
 
+// Return a list of all annotations in a given go file
 func GetAnnotations(path string) ([]string, error) {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
@@ -39,8 +43,10 @@ func GetAnnotations(path string) ([]string, error) {
 		log.Fatal(err)
 	}
 
+	// Get a list of all comments in the file
 	comments := ast.NewCommentMap(fileSet, file, file.Comments).Comments()
 
+	// Iterate comments and check if its an annotation
 	for _, comment := range comments {
 		if strings.HasPrefix(comment.Text(), "@") {
 			log.Printf("│ \t├── %v", trim(comment.Text()))

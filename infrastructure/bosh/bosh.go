@@ -14,6 +14,7 @@ type Bosh struct {}
 
 var conf *config.Config
 
+// Initialize the Bosh Director and the Deployment affiliated to the deployment name in the config
 func InitInfrastructureValues(config *config.Config) {
 	conf = config
 
@@ -35,6 +36,7 @@ func InitInfrastructureValues(config *config.Config) {
 
 }
 
+// Stop a VM based on the VM ID
 func (b *Bosh) Stop(id string) {
 	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StopOpts{
 		Converge:    true,
@@ -45,6 +47,7 @@ func (b *Bosh) Stop(id string) {
 	}
 }
 
+// Start a VM based on the VM ID
 func (b *Bosh) Start(id string) {
 	// Restart a stopped VM
 	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StartOpts{
@@ -56,6 +59,7 @@ func (b *Bosh) Start(id string) {
 	}
 }
 
+// Return a map of all IPs of the deployment with the VM ID as the key, and all affiliated IPs as the value
 func (b *Bosh) GetIPs() map[string][]string {
 	// Get the ips of all VMs of a deployment
 
@@ -76,6 +80,7 @@ func (b *Bosh) GetIPs() map[string][]string {
 	return ips
 }
 
+// Return an own Deployment struct with some important metrics
 func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	vmVitals, err := deployment.VMInfos()
 
@@ -85,7 +90,6 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 
 	var vms []infrastructure.VM
 
-	// Check if one of the VMs has a different process state than "running"
 	for _, vmVital := range vmVitals {
 		vms = append(vms, infrastructure.VM{
 			ServiceName:           vmVital.JobName,
@@ -110,6 +114,7 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	}
 }
 
+// Check if a VM is running
 func (b *Bosh) IsRunning() bool {
 	vmVitals, err := deployment.VMInfos()
 
