@@ -125,7 +125,7 @@ After setting up the configuration.yml you should now be able to run your tests 
 
 This project was designed as a full community driven and generic testing framework for infrastructures and services, which means that you are able to use your very own tests. When writing this code, there are some restrictions you have to follow in order to make the framework work with your tests.
 
-##### Project Structure
+#### Project Structure
 
 When creating the project the first important but easy to handle restriction is the project structure. For every service you want to implement tests for you have to create a folder in the root directory of the project. In this folder you can create several go files with your code.
 
@@ -147,7 +147,9 @@ Lets say you want to create tests for MongoDB and Redis, your project structure 
 
 Remember that you have to adjust your configuration.yml, where `github.test_repo` is now the URL to your own repository and `service.name` is equal to one of the directories you created (mongodb, redis...).
 
-##### Function Signatures
+#### Function Signatures
+
+First of all run `go get github.com/evoila/infraTESTure`
 
 Every function you want to be executed on runtime must have a specific signature in order to be found by the go plugin package.
 
@@ -162,7 +164,7 @@ with no return value and parameters `Config` and `Infrastructure` imported from
 "github.com/evoila/infraTESTure/infrastructure"
 ```
 
-##### Annotations
+#### Annotations
 
 Last but not least you have to annotate the function correctly. Since there are not official annotations in Go we solved this problem by simply using comments. This comment has to be exactly above the function and must look like
 
