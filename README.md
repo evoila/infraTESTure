@@ -145,6 +145,7 @@ Lets say you want to create tests for MongoDB and Redis, your project structure 
 │   │ 	├── thirdRedisFile.go
 ```
 
+Remember that you have to adjust your configuration.yml, where `github.test_repo` is now the URL to your own repository and `service.name` is equal to one of the directories you created (mongodb, redis...).
 
 ##### Function Signatures
 
