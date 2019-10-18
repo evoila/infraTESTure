@@ -43,9 +43,9 @@ COMMANDS:
 
 The info as well as the run command come with one ore more flags you **can** or **must** set.
 
-| Command   | Flags                         | Description                                                                                           | Flag required |
+| Command   | Flags | Description | Flag required |
 | --------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- | ------------- |
-| info, i   | --repository, -r              | URL to the Repository from which you want to get test information                                     | yes           | 
+| info, i   | --repository, -r <br> --tag, -t | URL to the Repository from which you want to get test information <br> Specific Tag from which commit you want to get the test information | yes <br> no | 
 | run, r    | --config, -c  <br> --edit, -e | Path to the configuration file <br> Tells the tool if you want to edit the test code before running it| yes <br> no   |
 
 ⚠️ **Note:** Only repositories with a specific schemed go code can be used with the `infraTESTure info` command. For more information see [Bring your own tests](#bring-your-own-tests)
@@ -65,6 +65,7 @@ Now that you have the information about which tests are available for which serv
 deployment_name: my-test-deployment
 github:
   test_repo: https://github.com/evoila/infra-tests
+  tag: v1.0
   saving_location: /Users/me/Desktop
   repo_name: my-tests
 service:
@@ -92,7 +93,8 @@ bosh:
 | -------------------------------------- | ----------------- | ----- |
 | deployment_name | Name of the deployment | Yes |
 | github.test_repo| URL of the github repository containing the tests| Yes |
-| github.saving_location | Path on your computer where the github repo is going to be saved to | Yes | 
+| github.tag | Specific Tag you want to clone the repository from | No | 
+| github.saving_location | Path on your computer where the github repo is going to be saved to | Yes |
 | github.repo_name | Describes under which directory name the repository is saved on your computer | Yes|
 | service<span>.name| Name of the service you want to test | Yes |
 | service.port | Port of the service you want to test | Yes 

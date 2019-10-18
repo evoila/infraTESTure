@@ -16,6 +16,7 @@ type Config struct {
 
 type Github struct {
 	TestRepo string `yaml:"test_repo"`
+	Tag string `yaml:"tag"`
 	SavingLocation string `yaml:"saving_location""`
 	RepoName string `yaml:"repo_name""`
 }

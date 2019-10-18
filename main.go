@@ -37,12 +37,18 @@ func commands() {
 					Usage:       "`URL` to the Repository from which you want to get test information",
 					Required:    true,
 				},
+				cli.StringFlag{
+					Name:        "tag, t",
+					Usage:       "Specific `TAG` to clone from",
+					Required:    false,
+				},
 			},
 			Action: func(c *cli.Context) {
 				url := c.String("repository")
+				tag := c.String("tag")
 				tmpDir := appendSlash(os.TempDir()) + "infra-tmp"
 
-				gitClone(url, tmpDir)
+				gitClone(url, tmpDir, tag)
 
 				log.Printf("The following services and tests were found in %v:\n\n", url)
 
@@ -93,6 +99,10 @@ func commands() {
 					Name:        "edit, e",
 					Usage:       "Tells the tool if you want to edit the test code or not",
 				},
+				cli.BoolFlag{
+					Name: 		 "override, o",
+					Usage:		 "Overrides an already cloned repository",
+				},
 			},
 
 			Action: func(c *cli.Context) {
@@ -112,12 +122,19 @@ func commands() {
 
 				repoPath += conf.Github.RepoName
 
-				//TODO: Make it possible to overwrite a repository
+				if c.Bool("override") {
+					cmd := exec.Command("bash", "-c", "rm -rf " + repoPath)
+					err = cmd.Run()
+
+					if err != nil {
+						logError(err, "")
+					}
+				}
 
 				// Check if the repository is already cloned, and if so use this repository
 				if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 					log.Printf("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
-					gitClone(conf.Github.TestRepo, repoPath)
+					gitClone(conf.Github.TestRepo, repoPath, conf.Github.Tag)
 				} else {
 					log.Printf("[INFO] Using existing repository %v\n", repoPath)
 				}
@@ -201,8 +218,14 @@ func logError(err error, customMessage string) {
 	log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
 }
 
-func gitClone(url string, repoPath string) {
-	cmd := exec.Command("bash", "-c", "git clone " + url + " " + repoPath)
+func gitClone(url string, repoPath string, tag string) {
+	var tagClone string
+
+	if tag != "" {
+		tagClone = "--branch " + tag + " --single-branch"
+	}
+
+	cmd := exec.Command("bash", "-c", "git clone " + url + " " + repoPath + " " + tagClone)
 	err := cmd.Run()
 
 	if err != nil {

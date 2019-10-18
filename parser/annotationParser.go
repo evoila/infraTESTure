@@ -36,7 +36,7 @@ func GetFunctionNames(tests []config.Test, path string) ([]string, error) {
 }
 
 // Return a list of all annotations in a given go file
-func GetAnnotations(path string) ([]string, error) {
+func GetAnnotations(path string) {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
 	if err != nil {
@@ -52,8 +52,6 @@ func GetAnnotations(path string) ([]string, error) {
 			log.Printf("│ \t├── %v", trim(comment.Text()))
 		}
 	}
-
-	return nil, nil
 }
 
 func trim(s string) string {
