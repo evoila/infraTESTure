@@ -46,7 +46,7 @@ The info as well as the run command come with one ore more flags you **can** or 
 | Command   | Flags | Description | Flag required |
 | --------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- | ------------- |
 | info, i   | --repository, -r <br> --tag, -t | URL to the Repository from which you want to get test information <br> Specific Tag from which commit you want to get the test information | yes <br> no | 
-| run, r    | --config, -c  <br> --edit, -e | Path to the configuration file <br> Tells the tool if you want to edit the test code before running it| yes <br> no   |
+| run, r    | --config, -c  <br> --edit, -e <br> --override, -o | Path to the configuration file <br> Tells the tool if you want to edit the test code before running it <br> Overrides existing repository on your computer| yes <br> no <br> no  |
 
 ⚠️ **Note:** Only repositories with a specific schemed go code can be used with the `infraTESTure info` command. For more information see [Bring your own tests](#bring-your-own-tests)
 
