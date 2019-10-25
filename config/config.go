@@ -41,6 +41,7 @@ type Testing struct {
 
 type Test struct {
 	Name string `yaml:"name"`
+	Properties map[string]string `yaml:"properties"`
 }
 
 type Bosh struct {

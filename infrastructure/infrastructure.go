@@ -8,6 +8,8 @@ type Infrastructure interface {
 	GetIPs() map[string][]string
 	GetDeployment() Deployment
 	IsRunning() bool
+	FillDisk(int, string, string, string)
+	CleanupDisk(string, string, string)
 }
 
 type Deployment struct {

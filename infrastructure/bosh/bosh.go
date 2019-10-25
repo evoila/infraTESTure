@@ -1,12 +1,14 @@
 package bosh
 
 import (
+	"fmt"
 	"github.com/cloudfoundry/bosh-cli/director"
 	"github.com/evoila/infraTESTure/config"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/fatih/color"
 	"log"
 	"math"
+	"os"
 	"strconv"
 )
 
@@ -101,9 +103,7 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
 			//TODO: find out how to get disk size
 			DiskSize:			   0,
-			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["system"].Percent) +
-				                   stringToFloat(vmVital.Vitals.Disk["ephemeral"].Percent) +
-								   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
+			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
 		})
 	}
 
@@ -129,6 +129,36 @@ func (b *Bosh) IsRunning() bool {
 	}
 
 	return true
+}
+
+func (b *Bosh) FillDisk(size int, path string, fileName string, vmId string) {
+	session, client, err := createSshSession(vmId)
+	defer client.Close()
+	defer session.Close()
+
+	if err != nil && client == nil {
+		logError(err, "Failed to create SSH session")
+	}
+
+	session.Stdout = os.Stdout
+	session.Stderr = os.Stderr
+
+	err = session.Run(fmt.Sprintf("cd %s && sudo dd if=/dev/urandom of=%s count=%v bs=1048576", path, fileName, size))
+}
+
+func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
+	session, client, err := createSshSession(vmId)
+	defer client.Close()
+	defer session.Close()
+
+	if err != nil && client == nil {
+		logError(err, "Failed to create SSH session")
+	}
+
+	session.Stdout = os.Stdout
+	session.Stderr = os.Stderr
+
+	err = session.Run(fmt.Sprintf("sudo rm %s/%s", path, fileName))
 }
 
 func logError(err error, customMessage string) {
