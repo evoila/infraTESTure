@@ -1,6 +1,7 @@
 package bosh
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/cloudfoundry/bosh-cli/director"
 	"github.com/evoila/infraTESTure/config"
@@ -10,6 +11,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Bosh struct {}
@@ -93,6 +95,8 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	var vms []infrastructure.VM
 
 	for _, vmVital := range vmVitals {
+		used, available := ParseDiskSize(vmVital.ID)
+
 		vms = append(vms, infrastructure.VM{
 			ServiceName:           vmVital.JobName,
 			ID:                    vmVital.ID,
@@ -101,9 +105,9 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 			CpuUsage:          	   math.Round(stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys)),
 			MemoryUsagePercentage: stringToFloat(vmVital.Vitals.Mem.Percent),
 			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
-			//TODO: find out how to get disk size
-			DiskSize:			   0,
-			DiskUsage:			   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
+			DiskSize:			   stringToFloat(used) + stringToFloat(available),
+			DiskUsageTotal:		   stringToFloat(used),
+			DiskUsagePercentage:   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
 		})
 	}
 
@@ -151,7 +155,7 @@ func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
 	defer client.Close()
 	defer session.Close()
 
-	if err != nil && client == nil {
+	if err != nil {
 		logError(err, "Failed to create SSH session")
 	}
 
@@ -173,4 +177,31 @@ func stringToFloat(value string) float64 {
 	}
 
 	return floatValue
+}
+
+func ParseDiskSize(vmId string) (used string, available string){
+	session, client, err := createSshSession(vmId)
+	defer client.Close()
+	defer session.Close()
+
+	if err != nil && client == nil {
+		logError(err, "Failed to create SSH session")
+	}
+
+	var result bytes.Buffer
+	session.Stdout = &result
+	session.Stderr = os.Stderr
+
+	err = session.Run("df | awk 'NR > 1{print $6\" \"$3\" \"$4 }'")
+
+	fields := strings.Fields(result.String())
+
+	for i, field := range fields {
+		//TODO: Hardcoded or configurable?
+		if strings.HasPrefix(field, "/var/vcap/store") {
+			return fields[i+1], fields[i+2]
+		}
+	}
+
+	return "", ""
 }

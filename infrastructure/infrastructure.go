@@ -24,8 +24,9 @@ type VM struct {
 	IPs []string
 	State string
 	DiskSize float64
+	DiskUsageTotal float64
+	DiskUsagePercentage float64
 	CpuUsage float64
 	MemoryUsagePercentage float64
 	MemoryUsageTotal float64
-	DiskUsage float64
 }
