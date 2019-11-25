@@ -10,6 +10,12 @@ type Infrastructure interface {
 	IsRunning() bool
 	FillDisk(int, string, string, string)
 	CleanupDisk(string, string, string)
+	SimulatePackageLoss(int, int) string
+	SimulatePackageCorruption(int, int) string
+	SimulatePackageDuplication(int, int) string
+	SimulateNetworkDelay(int, int) string
+	AddTrafficControl(string, string, string)
+	RemoveTrafficControl(string)
 }
 
 type Deployment struct {
