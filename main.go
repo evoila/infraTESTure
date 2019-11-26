@@ -176,15 +176,18 @@ func commands() {
 
 					// Get a list of all names of functions that has to be executed, based on if their annotations match the
 					// test names provided by the configuration.yml
-					for _, file := range files {
-						if strings.HasSuffix(file.Name(), ".go") {
-							newFunctionNames, err := parser.GetFunctionNames(conf.Testing.Tests, appendSlash(serviceDir) + file.Name())
+					for _, test := range conf.Testing.Tests {
+						for _, file := range files {
+							if strings.HasSuffix(file.Name(), ".go") {
+								//newFunctionNames, err := parser.GetFunctionNames(test, appendSlash(serviceDir) + file.Name())
+								newFunctionNames, err := parser.GetFunctionNames(test, appendSlash("/Users/reneschollmeyer/go/src/github.com/evoila/infra-tests/redis")+file.Name())
 
-							if err != nil {
-								logError(err, "")
+								if err != nil {
+									logError(err, "")
+								}
+
+								functionNames = append(functionNames, newFunctionNames...)
 							}
-
-							functionNames = append(functionNames, newFunctionNames...)
 						}
 					}
 

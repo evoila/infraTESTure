@@ -11,7 +11,7 @@ import (
 )
 
 // Return a list of all functions whose annotations match with the test names in the config
-func GetFunctionNames(tests []config.Test, path string) ([]string, error) {
+func GetFunctionNames(test config.Test, path string) ([]string, error) {
 	var methodNames []string
 
 	fileSet := token.NewFileSet() // positions are relative to fileSet
@@ -22,12 +22,10 @@ func GetFunctionNames(tests []config.Test, path string) ([]string, error) {
 
 	// Iterate through all function declarations to check if any annotation matches with the
 	// tests provided in the configuration.yml
-	for _, test := range tests {
-		for _, decl := range file.Decls {
-			if fun, ok := decl.(*ast.FuncDecl); ok {
-				if fun.Doc != nil && contains("@"+test.Name, fun.Doc.List) {
-					methodNames = append(methodNames, fun.Name.Name)
-				}
+	for _, decl := range file.Decls {
+		if fun, ok := decl.(*ast.FuncDecl); ok {
+			if fun.Doc != nil && contains("@"+test.Name, fun.Doc.List) {
+				methodNames = append(methodNames, fun.Name.Name)
 			}
 		}
 	}
