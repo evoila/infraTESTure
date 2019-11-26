@@ -16,6 +16,9 @@ type Infrastructure interface {
 	SimulateNetworkDelay(int, int) string
 	AddTrafficControl(string, string, string)
 	RemoveTrafficControl(string)
+	StartCPULoad(string, int)
+	StartMemLoad(string, float64)
+	StopStress(string)
 }
 
 type Deployment struct {

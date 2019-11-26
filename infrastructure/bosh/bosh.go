@@ -26,6 +26,9 @@ const (
 			"sudo tc qdisc add dev eth0 parent 1a1a:2 handle 2518: netem %s"
 
 	removeTC = "sudo tc qdisc del dev eth0 root"
+	cpuLoad = "sudo apt-get -y install stress-ng && setsid stress-ng -c 1 -l %d &>/dev/null"
+	memLoad = "sudo apt-get -y install stress-ng && setsid stress-ng --vm-bytes $(awk '/MemAvailable/{printf \"%%d\\n\", $2 * %f;}' < /proc/meminfo)k -m 1 &>/dev/null"
+	stopStress = "sudo kill $(pgrep -o -x stress-ng) && sudo apt-get -y remove stress-ng"
 )
 
 var conf *config.Config
@@ -148,15 +151,11 @@ func (b *Bosh) IsRunning() bool {
 }
 
 func (b *Bosh) FillDisk(size int, path string, fileName string, vmId string) {
-	err := runSshCommand(vmId, fmt.Sprintf("cd %s && sudo dd if=/dev/urandom of=%s count=%v bs=1048576", path, fileName, size))
-
-	if err != nil {
-		logError(err, "Creating big data files failed")
-	}
+	RunSshCommand(vmId, fmt.Sprintf("cd %s && sudo dd if=/dev/urandom of=%s count=%v bs=1048576", path, fileName, size))
 }
 
 func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
-	err := runSshCommand(vmId, fmt.Sprintf("sudo rm %s/%s", path, fileName))
+	_, err := RunSshCommand(vmId, fmt.Sprintf("sudo rm %s/%s", path, fileName))
 
 	if err != nil {
 		logError(err, "Cleanup disk failed")
@@ -165,7 +164,7 @@ func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
 
 func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 	if loss < 0 || loss > 100 || correlation < 0 || correlation > 100 {
-		logError(nil, "invalid value. loss and correlation cannot be lower than 0 or greater than 100")
+		logError(nil, "Invalid value. Loss and correlation cannot be lower than 0 or greater than 100")
 		return ""
 	}
 
@@ -174,7 +173,7 @@ func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 
 func (b *Bosh) SimulatePackageCorruption(corruption int, correlation int) string {
 	if corruption < 0 || corruption > 100 || correlation < 0 || correlation > 100 {
-		logError(nil,"invalid value. corruption and correlation cannot be lower than 0 or greater than 100")
+		logError(nil,"Invalid value. Corruption and correlation cannot be lower than 0 or greater than 100")
 		return ""
 	}
 
@@ -183,7 +182,7 @@ func (b *Bosh) SimulatePackageCorruption(corruption int, correlation int) string
 
 func (b *Bosh) SimulatePackageDuplication(duplication int, correlation int) string {
 	if duplication < 0 || duplication > 100 || correlation < 0 || correlation > 100 {
-		logError(nil, "invalid value. duplication and correlation cannot be lower than 0 or greater than 100")
+		logError(nil, "Invalid value. Duplication and correlation cannot be lower than 0 or greater than 100")
 		return ""
 	}
 
@@ -192,7 +191,7 @@ func (b *Bosh) SimulatePackageDuplication(duplication int, correlation int) stri
 
 func (b *Bosh) SimulateNetworkDelay(delay int, variation int) string {
 	if delay < 0 || variation < 0 {
-		logError(nil, "invalid value. delay and variation cannot be lower than 0")
+		logError(nil, "Invalid value. Delay and variation cannot be lower than 0")
 		return ""
 	}
 
@@ -204,7 +203,7 @@ func (b *Bosh) SimulateNetworkDelay(delay int, variation int) string {
 }
 
 func (b *Bosh) AddTrafficControl(vmId string, directorIp string, tc string) {
-	err := runSshCommand(vmId, fmt.Sprintf(netem, directorIp, tc))
+	_, err := RunSshCommand(vmId, fmt.Sprintf(netem, directorIp, tc))
 
 	if err != nil {
 		logError(err, "Failed to simulate traffic control")
@@ -220,26 +219,54 @@ func (b *Bosh) RemoveTrafficControl(vmId string) {
 		logError(err, "Failed to create SSH session")
 	}
 
-	err = runSshCommand(vmId, removeTC)
+	_, err = RunSshCommand(vmId, removeTC)
 
 	if err != nil {
 		logError(err, "Failed to remove Traffic Control")
 	}
 }
 
-func runSshCommand(vmId string, command string) error {
+func (b *Bosh) StartCPULoad(vmId string, percentage int) {
+	_, err := RunSshCommand(vmId, fmt.Sprintf(cpuLoad, percentage))
+
+	if err != nil {
+		logError(err, "Failed to simulate CPU load")
+	}
+}
+
+func (b *Bosh) StartMemLoad(vmId string, percentage float64) {
+	_, err := RunSshCommand(vmId, fmt.Sprintf(memLoad, percentage/100))
+
+	if err != nil {
+		logError(err, "Failed to simulate Memory Load")
+	}
+}
+
+func (b *Bosh) StopStress(vmId string) {
+	_, err := RunSshCommand(vmId, fmt.Sprintf(stopStress))
+
+	if err != nil {
+		logError(err, "Failed to kill stress process")
+	}
+}
+
+func RunSshCommand(vmId string, command string) (string, error) {
 	session, client, err := createSshSession(vmId)
 	defer client.Close()
 	defer session.Close()
 
 	if err != nil {
 		logError(err, "Failed to create SSH session")
+		return "", err
 	}
 
-	session.Stdout = os.Stdout
+	var result bytes.Buffer
+	session.Stdout = &result
 	session.Stderr = os.Stderr
 
-	return session.Run(command)
+	err = session.Run(command)
+
+	return result.String(), err
 }
 
 func logError(err error, customMessage string) {
