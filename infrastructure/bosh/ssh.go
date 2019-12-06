@@ -1,10 +1,12 @@
 package bosh
 
 import (
+	"bytes"
 	"github.com/cloudfoundry/bosh-cli/director"
 	"github.com/cloudfoundry/bosh-utils/uuid"
 	"golang.org/x/crypto/ssh"
 	"net"
+	"os"
 )
 
 func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, err error){
@@ -53,4 +55,23 @@ func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, er
 	}
 
 	return session, client, nil
+}
+
+func RunSshCommand(vmId string, command string) (string, error) {
+	session, client, err := createSshSession(vmId)
+	defer client.Close()
+	defer session.Close()
+
+	if err != nil {
+		logError(err, "Failed to create SSH session")
+		return "", err
+	}
+
+	var result bytes.Buffer
+	session.Stdout = &result
+	session.Stderr = os.Stderr
+
+	err = session.Run(command)
+
+	return result.String(), err
 }
