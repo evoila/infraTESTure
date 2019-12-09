@@ -28,6 +28,10 @@ func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
 	}
 }
 
+// The creation of the tc commands and the actual execution are separated here
+// because the user may wants to create a more complex tc command consisting of
+// e.g. package loss AND network delay
+
 // Creates tc command for package loss based on given parameters
 func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 	if loss < 0 || loss > 100 || correlation < 0 || correlation > 100 {
