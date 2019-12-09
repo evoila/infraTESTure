@@ -1,12 +1,10 @@
 package bosh
 
 import (
-	"bytes"
 	"github.com/cloudfoundry/bosh-cli/director"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"log"
 	"math"
-	"os"
 	"strings"
 )
 
@@ -29,7 +27,7 @@ func (b *Bosh) GetIPs() map[string][]string {
 	}
 
 	return ips
-}x^
+}
 
 // Return an own Deployment struct with some important metrics
 func (b *Bosh) GetDeployment() infrastructure.Deployment {
@@ -105,22 +103,16 @@ func (b *Bosh) Start(id string) {
 	}
 }
 
+// SSH to vm and run df command in order to get the free disk space then filter
+// the one needed
 func ParseDiskSize(vmId string) (used string, available string){
-	session, client, err := createSshSession(vmId)
-	defer client.Close()
-	defer session.Close()
+	result, err := RunSshCommand(vmId, "df | awk 'NR > 1{print $6\" \"$3\" \"$4 }'")
 
-	if err != nil && client == nil {
-		logError(err, "Failed to create SSH session")
+	if err != nil {
+		logError(err, "Failed to acquire disk size information")
 	}
 
-	var result bytes.Buffer
-	session.Stdout = &result
-	session.Stderr = os.Stderr
-
-	err = session.Run("df | awk 'NR > 1{print $6\" \"$3\" \"$4 }'")
-
-	fields := strings.Fields(result.String())
+	fields := strings.Fields(result)
 
 	for i, field := range fields {
 		//TODO: Hardcoded or configurable?

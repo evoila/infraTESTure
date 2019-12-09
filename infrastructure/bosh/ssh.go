@@ -18,6 +18,7 @@ func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, er
 		return nil, nil, err
 	}
 
+	// Setup ssh for a specific vm
 	sshResult, err := deployment.SetUpSSH(director.NewAllOrInstanceGroupOrInstanceSlug("", vmId),
 		sshOpts)
 
@@ -37,18 +38,23 @@ func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, er
 		authMethods = append(authMethods, ssh.PublicKeys(signer))
 	}
 
+	// Setup config for ssh connection
 	config := &ssh.ClientConfig{
 		User: entry.Username,
 		Auth: authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
+
+	// Sets unset values to default
 	config.SetDefaults()
 
+	// Create ssh client
 	client, err = ssh.Dial("tcp", net.JoinHostPort(entry.Host, "22"), config)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// Create ssh session with client
 	session, err = client.NewSession()
 	if err != nil {
 		return nil, nil, err
@@ -58,6 +64,8 @@ func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, er
 }
 
 func RunSshCommand(vmId string, command string) (string, error) {
+
+	// Create ssh session and client
 	session, client, err := createSshSession(vmId)
 	defer client.Close()
 	defer session.Close()
@@ -67,10 +75,12 @@ func RunSshCommand(vmId string, command string) (string, error) {
 		return "", err
 	}
 
+	// Stream session stdout and stderror
 	var result bytes.Buffer
 	session.Stdout = &result
 	session.Stderr = os.Stderr
 
+	// Run the actual command
 	err = session.Run(command)
 
 	return result.String(), err

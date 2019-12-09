@@ -8,6 +8,7 @@ const (
 	stopStress = "sudo kill $(pgrep -o -x stress-ng) && sudo apt-get -y remove stress-ng"
 )
 
+// SSH to vm, install stress-ng and increase CPU load by a given percentage
 func (b *Bosh) StartCPULoad(vmId string, percentage int) {
 	_, err := RunSshCommand(vmId, fmt.Sprintf(cpuLoad, percentage))
 
@@ -16,6 +17,7 @@ func (b *Bosh) StartCPULoad(vmId string, percentage int) {
 	}
 }
 
+// SSH to vm, install stress-ng and increase RAM load by a given percentage
 func (b *Bosh) StartMemLoad(vmId string, percentage float64) {
 	_, err := RunSshCommand(vmId, fmt.Sprintf(memLoad, percentage/100))
 
@@ -24,6 +26,7 @@ func (b *Bosh) StartMemLoad(vmId string, percentage float64) {
 	}
 }
 
+// SSH to vm, kill the stress process and uninstall stress-ng
 func (b *Bosh) StopStress(vmId string) {
 	_, err := RunSshCommand(vmId, fmt.Sprintf(stopStress))
 

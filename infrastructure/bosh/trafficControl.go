@@ -14,10 +14,12 @@ const (
 	removeTC = "sudo tc qdisc del dev eth0 root"
 )
 
+// Create a big dump file with a given size in MB
 func (b *Bosh) FillDisk(size int, path string, fileName string, vmId string) {
 	RunSshCommand(vmId, fmt.Sprintf("cd %s && sudo dd if=/dev/urandom of=%s count=%v bs=1048576", path, fileName, size))
 }
 
+// Remove dump file
 func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
 	_, err := RunSshCommand(vmId, fmt.Sprintf("sudo rm %s/%s", path, fileName))
 
@@ -26,6 +28,7 @@ func (b *Bosh) CleanupDisk(path string, fileName string, vmId string) {
 	}
 }
 
+// Creates tc command for package loss based on given parameters
 func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 	if loss < 0 || loss > 100 || correlation < 0 || correlation > 100 {
 		logError(nil, "Invalid value. Loss and correlation cannot be lower than 0 or greater than 100")
@@ -35,6 +38,7 @@ func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 	return fmt.Sprintf("loss %d%% %d%%", loss, correlation)
 }
 
+// Creates tc command for package corruption based on given parameters
 func (b *Bosh) SimulatePackageCorruption(corruption int, correlation int) string {
 	if corruption < 0 || corruption > 100 || correlation < 0 || correlation > 100 {
 		logError(nil,"Invalid value. Corruption and correlation cannot be lower than 0 or greater than 100")
@@ -44,6 +48,7 @@ func (b *Bosh) SimulatePackageCorruption(corruption int, correlation int) string
 	return fmt.Sprintf("corrupt %d%% %d%%", corruption, correlation)
 }
 
+// Creates tc command for package duplication based on given parameters
 func (b *Bosh) SimulatePackageDuplication(duplication int, correlation int) string {
 	if duplication < 0 || duplication > 100 || correlation < 0 || correlation > 100 {
 		logError(nil, "Invalid value. Duplication and correlation cannot be lower than 0 or greater than 100")
@@ -52,7 +57,7 @@ func (b *Bosh) SimulatePackageDuplication(duplication int, correlation int) stri
 
 	return fmt.Sprintf("duplicate %d%% %d%%", duplication, correlation)
 }
-
+// Creates tc command for network delay based on given parameters
 func (b *Bosh) SimulateNetworkDelay(delay int, variation int) string {
 	if delay < 0 || variation < 0 {
 		logError(nil, "Invalid value. Delay and variation cannot be lower than 0")
@@ -66,6 +71,7 @@ func (b *Bosh) SimulateNetworkDelay(delay int, variation int) string {
 	}
 }
 
+// Open SSH session and run the tc command
 func (b *Bosh) AddTrafficControl(vmId string, directorIp string, tc string) {
 	_, err := RunSshCommand(vmId, fmt.Sprintf(netem, directorIp, tc))
 
@@ -74,16 +80,9 @@ func (b *Bosh) AddTrafficControl(vmId string, directorIp string, tc string) {
 	}
 }
 
+// Open SSH session and run command for removing the traffic control
 func (b *Bosh) RemoveTrafficControl(vmId string) {
-	session, client, err := createSshSession(vmId)
-	defer client.Close()
-	defer session.Close()
-
-	if err != nil {
-		logError(err, "Failed to create SSH session")
-	}
-
-	_, err = RunSshCommand(vmId, removeTC)
+	_, err := RunSshCommand(vmId, removeTC)
 
 	if err != nil {
 		logError(err, "Failed to remove Traffic Control")

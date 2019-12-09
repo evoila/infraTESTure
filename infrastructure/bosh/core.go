@@ -33,7 +33,6 @@ func InitInfrastructureValues(config *config.Config) {
 
 }
 
-
 func logError(err error, customMessage string) {
 	if err != nil {
 		log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
