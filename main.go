@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"plugin"
+	"sort"
 	"strings"
 )
 
@@ -70,10 +71,22 @@ func commands() {
 							log.Printf("├── %v", color.GreenString(dir.Name()))
 						}
 
+						var testNames []string
+
 						for _, goFile := range goFiles {
 							if strings.HasSuffix(goFile.Name(), ".go") {
-								parser.GetAnnotations(appendSlash(tmpDir)+dir.Name()+"/"+goFile.Name())
+								tmpTestNames := parser.GetAnnotations(appendSlash(tmpDir)+dir.Name()+"/"+goFile.Name())
+
+								for i := range tmpTestNames {
+									testNames = append(testNames, tmpTestNames[i])
+								}
 							}
+						}
+
+						sort.Strings(testNames)
+
+						for i := range testNames {
+							log.Printf("│ \t├── %v", testNames[i])
 						}
 					}
 				}

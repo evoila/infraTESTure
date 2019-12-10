@@ -34,7 +34,7 @@ func GetFunctionNames(test config.Test, path string) ([]string, error) {
 }
 
 // Return a list of all annotations in a given go file
-func GetAnnotations(path string) {
+func GetAnnotations(path string) []string {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
 	if err != nil {
@@ -44,12 +44,16 @@ func GetAnnotations(path string) {
 	// Get a list of all comments in the file
 	comments := ast.NewCommentMap(fileSet, file, file.Comments).Comments()
 
+	var testNames []string
+
 	// Iterate comments and check if its an annotation
 	for _, comment := range comments {
 		if strings.HasPrefix(comment.Text(), "@") {
-			log.Printf("│ \t├── %v", trim(comment.Text()))
+			testNames = append(testNames, trim(comment.Text()))
 		}
 	}
+
+	return testNames
 }
 
 func trim(s string) string {
