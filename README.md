@@ -50,13 +50,19 @@ The info as well as the run command come with one ore more flags you **can** or 
 
 ⚠️ **Note:** Only repositories with a specific schemed go code can be used with the `infraTESTure info` command. For more information see [Bring your own tests](#bring-your-own-tests)
 
-The `infraTESTure info` command should create an output like 
+If you run the info command with our test repository with predefined redis tests like `infraTESTure info -r https://github.com/evoila/infra-tests`the output should like similar to:
 
 ```
-2019/10/15 09:19:56 ├── redis
-2019/10/15 09:19:56 │ 	├── Service
-2019/10/15 09:19:56 │ 	├── Health
-2019/10/15 09:19:56 │ 	├── Failover
+2019/12/10 08:30:33 ├── redis
+2019/12/10 08:30:33 │   ├── CPU Load
+2019/12/10 08:30:33 │   ├── Failover
+2019/12/10 08:30:33 │   ├── Health
+2019/12/10 08:30:33 │   ├── Info
+2019/12/10 08:30:33 │   ├── Network Delay
+2019/12/10 08:30:33 │   ├── Package Loss
+2019/12/10 08:30:33 │   ├── RAM Load
+2019/12/10 08:30:33 │   ├── Service
+2019/12/10 08:30:33 │   ├── Storage
 ```
 
 Now that you have the information about which tests are available for which services you are ready to create the `configuration.yml`:
@@ -79,15 +85,29 @@ service:
 testing:
   infrastructure: bosh
   tests:
+  - name: info
   - name: health
   - name: service
   - name: failover
+  - name: storage
+    properties:
+      path: /path/to/persistent/disk
+  - name: package loss
+    properties:
+      directorIp: 127.0.0.1
+  - name: network delay
+    properties:
+      directorIp: 127.0.0.1
+  - name: cpu load
+  - name: ram load
 bosh:
   uaa_url: https://127.0.0.1:8443
   director_url: https://127.0.0.1:25555
   uaa_client: admin
   uaa_client_secret: adminPassword
 ```
+
+⚠️ **Note:** The test execution order is equals to the order the tests are defined in the `configuration.yml`. So the info test is executed first, health second, service third etc.
 
 | Field                                  | Description   | Required |
 | -------------------------------------- | ----------------- | ----- |
@@ -109,6 +129,13 @@ bosh:
 | bosh.uaa_client | Usernamen of the bosh UAA client | Yes |
 | bosh.uaa_client_secret | Password for the bosh UAA client | Yes|
 
+As you can see some tests also have a field `properties`. It can be important to individually configure some tests. For example we need the bosh director ip for the traffic shaping tests, to exclude it from the traffic shaping rules. Imagine simulating 100% package loss on a VM. The bosh director would think the VM is unresponsive and would try to repair it.
+The good thing with these `properties`is that you can add whatever property you want. In your test simply run
+
+```go
+getTestProperties(config, "<test_name>")["<property_name>"]
+```
+
 After setting up the configuration.yml you should now be able to run your tests with `infraTESTure run -c /path/to/configuration.yml`. The output should look similar to this:
 
 ```
@@ -125,7 +152,7 @@ After setting up the configuration.yml you should now be able to run your tests 
 
 ### Bring Your Own Tests
 
-This project was designed as a full community driven and generic testing framework for infrastructures and services, which means that you are able to use your very own tests. When writing this code, there are some restrictions you have to follow in order to make the framework work with your tests.
+This project was designed as a full community driven and generic testing framework for infrastructures and services, which means that you are able to use your very own tests. When writing the code, there are some restrictions you have to follow in order to make the framework work with your tests.
 
 #### Project Structure
 
