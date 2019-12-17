@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/evoila/infraTESTure/config"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/evoila/infraTESTure/infrastructure/bosh"
@@ -208,6 +209,9 @@ func commands() {
 						logError(err, "")
 					}
 
+					successful := 0
+					failed := 0
+
 					// Use the plugin function "Lookup" the find and execute every function found in "GetFunctionNames"
 					for _, function := range functionNames {
 						symbol, err := p.Lookup(function)
@@ -216,14 +220,24 @@ func commands() {
 							logError(err, "")
 						}
 
-						fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure))
+						fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure) bool)
 
 						if !ok {
 							panic(ok)
 						}
 
-						fun(conf, &bosh.Bosh{})
+						testResult := fun(conf, &bosh.Bosh{})
+
+						if testResult {
+							successful++
+						} else {
+							failed++
+						}
 					}
+
+					fmt.Printf("\033[1;34m%s\033[0m", "\n##### Result #####\n")
+
+					log.Printf("[INFO] %d of %d tests succeeded", successful, successful+failed)
 				}
 			},
 		},
