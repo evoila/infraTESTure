@@ -186,7 +186,7 @@ Every function you want to be executed on runtime must have a specific signature
 func MyTest(config *config.Config, infrastructure infrastructure.Infrastructure) bool { ... } 
 ```
 
-with no return value and parameters `Config` and `Infrastructure` imported from
+with a boolean return value telling you whether the test was successful (true) or not (false) and parameters `Config` and `Infrastructure` imported from
 
 ```go
 "github.com/evoila/infraTESTure/config"
