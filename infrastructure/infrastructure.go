@@ -8,17 +8,28 @@ type Infrastructure interface {
 	GetIPs() map[string][]string
 	GetDeployment() Deployment
 	IsRunning() bool
+
 	FillDisk(int, string, string, string)
 	CleanupDisk(string, string, string)
+
 	SimulatePackageLoss(int, int) string
 	SimulatePackageCorruption(int, int) string
 	SimulatePackageDuplication(int, int) string
 	SimulateNetworkDelay(int, int) string
 	AddTrafficControl(string, string, string)
 	RemoveTrafficControl(string)
+	//LimitBandwidth(string, int, string)
+
 	StartCPULoad(string, int)
 	StartMemLoad(string, float64)
 	StopStress(string)
+
+	AssertEquals(interface{}, interface{}) bool
+	AssertNotEquals(interface{}, interface{}) bool
+	AssertTrue(bool) bool
+	AssertFalse(bool) bool
+	AssertNil(interface{}) bool
+	AssertNotNil(interface{}) bool
 }
 
 type Deployment struct {
