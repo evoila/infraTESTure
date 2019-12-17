@@ -183,7 +183,7 @@ First of all run `go get github.com/evoila/infraTESTure`
 Every function you want to be executed on runtime must have a specific signature in order to be found by the go plugin package.
 
 ```go
-func MyTest(config *config.Config, infrastructure infrastructure.Infrastructure) { ... }
+func MyTest(config *config.Config, infrastructure infrastructure.Infrastructure) bool { ... } 
 ```
 
 with no return value and parameters `Config` and `Infrastructure` imported from
@@ -199,7 +199,7 @@ Last but not least you have to annotate the function correctly. Since there are 
 
 ```go
 // @Test
-func MyTest(...) { ... }
+func MyTest(...) bool { ... }
 ```
 
 You could now add 
