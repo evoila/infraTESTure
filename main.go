@@ -21,42 +21,49 @@ var app = cli.NewApp()
 
 func info() {
 	app.Name = "infraTESTure CLI"
-	app.Email = "rschollmeyer@evoila.de"
 	app.Usage = "CLI for using the infraTESTure framework"
-	app.Author = "Rene Schollmeyer, evoila"
+	app.Authors = []*cli.Author{{"Rene Schollmeyer, evoila", "rschollmeyer@evoila.de"}}
 	app.Version = "0.0.1"
 }
 
 func commands() {
-	app.Commands = []cli.Command {
+	app.Commands = []*cli.Command {
 		{
 			Name: "info",
 			Aliases: []string{"i"},
 			Usage: "Information about what tests are enabled for what services",
 			Flags: []cli.Flag {
-				cli.StringFlag{
-					Name:        "repository, r",
+				&cli.StringFlag{
+					Name:        "repository",
+					Aliases:	 []string{"r"},
 					Usage:       "`URL` to the Repository from which you want to get test information",
 					Required:    true,
 				},
-				cli.StringFlag{
-					Name:        "tag, t",
+				&cli.StringFlag{
+					Name:        "tag",
+					Aliases:	 []string{"t"},
 					Usage:       "Specific `TAG` to clone from",
 					Required:    false,
 				},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				url := c.String("repository")
 				tag := c.String("tag")
 				tmpDir := appendSlash(os.TempDir()) + "infra-tmp"
 
-				gitClone(url, tmpDir, tag)
+				err := gitClone(url, tmpDir, tag)
+
+				if err != nil {
+					logError(err, "Could not clone repository")
+					return err
+				}
 
 				log.Printf("The following services and tests were found in %v:\n\n", url)
 
 				dirs, err := ioutil.ReadDir(tmpDir)
 				if err != nil {
-					log.Fatal(err)
+					logError(err, "No repository found")
+					return err
 				}
 
 				// Iterate through all directories and files inside these directories to get a list
@@ -65,7 +72,8 @@ func commands() {
 					if dir.IsDir() {
 						goFiles, err := ioutil.ReadDir(appendSlash(tmpDir)+dir.Name())
 						if err != nil {
-							log.Fatal(err)
+							logError(err, "Failed to acquire offered tests")
+							return err
 						}
 
 						if !strings.HasPrefix(dir.Name(), ".") {
@@ -97,7 +105,10 @@ func commands() {
 
 				if err != nil {
 					logError(err, "Could not delete directory")
+					return err
 				}
+
+				return nil
 			},
 		},
 		{
@@ -105,25 +116,29 @@ func commands() {
 			Aliases: []string{"r"},
 			Usage: "Run tests based on a given configuration file",
 			Flags: []cli.Flag {
-				cli.StringFlag{
-					Name:        "config, c",
+				&cli.StringFlag{
+					Name:        "config",
+					Aliases:	 []string{"c"},
 					Usage:       "Load configuration from `FILE` for executing tests",
 				},
-				cli.BoolFlag{
-					Name:        "edit, e",
+				&cli.BoolFlag{
+					Name:        "edit",
+					Aliases:	 []string{"e"},
 					Usage:       "Tells the tool if you want to edit the test code or not",
 				},
-				cli.BoolFlag{
-					Name: 		 "override, o",
+				&cli.BoolFlag{
+					Name: 		 "override",
+					Aliases:	 []string{"o"},
 					Usage:		 "Overrides an already cloned repository",
 				},
 			},
 
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				conf, err := config.LoadConfig(c.String("config"))
 
 				if err != nil {
 					logError(err, "")
+					return err
 				}
 
 				bosh.InitInfrastructureValues(conf)
@@ -142,13 +157,18 @@ func commands() {
 
 					if err != nil {
 						logError(err, "")
+						return err
 					}
 				}
 
 				// Check if the repository is already cloned, and if so use this repository
 				if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 					log.Printf("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
-					gitClone(conf.Github.TestRepo, repoPath, conf.Github.Tag)
+					err = gitClone(conf.Github.TestRepo, repoPath, conf.Github.Tag)
+					if err != nil {
+						logError(err, "Could not clone repository")
+						return err
+					}
 				} else {
 					log.Printf("[INFO] Using existing repository %v\n", repoPath)
 				}
@@ -157,11 +177,13 @@ func commands() {
 
 				// If the --edit flag is set open the test file instead of running the tests
 				if c.Bool("edit") {
-					cmd := exec.Command("bash", "-c", "open -t " + appendSlash(serviceDir) + conf.Service.Name + ".go")
+					//TODO: change since this fails with changes in infra-tests
+					cmd := exec.Command("bash", "-c", "code . " + serviceDir)
 					err = cmd.Run()
 
 					if err != nil {
 						logError(err, "Could not open test file")
+						return err
 					}
 				} else {
 					// Build the given test repository as a go plugin
@@ -171,6 +193,7 @@ func commands() {
 
 					if err != nil {
 						logError(err, "Could not build go plugin")
+						return err
 					}
 
 					log.Printf("[INFO] Loading go plugin...")
@@ -178,6 +201,7 @@ func commands() {
 
 					if err != nil {
 						logError(err, "Could not load go plugin")
+						return err
 					}
 
 					var functionNames []string
@@ -186,6 +210,7 @@ func commands() {
 
 					if err != nil {
 						logError(err, "Could not load service directory")
+						return err
 					}
 
 					// Get a list of all names of functions that has to be executed, based on if their annotations match the
@@ -193,20 +218,16 @@ func commands() {
 					for _, test := range conf.Testing.Tests {
 						for _, file := range files {
 							if strings.HasSuffix(file.Name(), ".go") {
-								//newFunctionNames, err := parser.GetFunctionNames(test, appendSlash(serviceDir) + file.Name())
-								newFunctionNames, err := parser.GetFunctionNames(test, appendSlash("/Users/reneschollmeyer/go/src/github.com/evoila/infra-tests/redis")+file.Name())
+								newFunctionNames, err := parser.GetFunctionNames(test, appendSlash(serviceDir) + file.Name())
 
 								if err != nil {
 									logError(err, "")
+									return err
 								}
 
 								functionNames = append(functionNames, newFunctionNames...)
 							}
 						}
-					}
-
-					if err != nil {
-						logError(err, "")
 					}
 
 					successful := 0
@@ -218,6 +239,7 @@ func commands() {
 
 						if err != nil {
 							logError(err, "")
+							return err
 						}
 
 						fun, ok := symbol.(func(*config.Config, infrastructure.Infrastructure) bool)
@@ -239,16 +261,18 @@ func commands() {
 
 					log.Printf("[INFO] %d of %d tests succeeded", successful, successful+failed)
 				}
+
+				return nil
 			},
 		},
 	}
 }
 
 func logError(err error, customMessage string) {
-	log.Fatal(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
+	log.Printf(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
 }
 
-func gitClone(url string, repoPath string, tag string) {
+func gitClone(url string, repoPath string, tag string) error {
 	var tagClone string
 
 	if tag != "" {
@@ -259,8 +283,10 @@ func gitClone(url string, repoPath string, tag string) {
 	err := cmd.Run()
 
 	if err != nil {
-		logError(err, "Could not clone repository")
+		return err
 	}
+
+	return nil
 }
 
 func appendSlash(dir string) string {
