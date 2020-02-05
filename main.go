@@ -61,9 +61,24 @@ func commands() {
 					Usage:   "Overrides an already cloned repository",
 				},
 			},
-
 			Action: func(context *cli.Context) error {
 				return actions.Run(context)
+			},
+		},
+		{
+			Name:    "offline",
+			Aliases: []string{"o"},
+			Usage:   "Run tests from a pre compiled go plugin to skip git usage.",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "config",
+					Aliases:  []string{"c"},
+					Usage:    "Load configuration from `FILE` for executing tests",
+					Required: true,
+				},
+			},
+			Action: func(context *cli.Context) error {
+				return actions.Offline(context)
 			},
 		},
 	}

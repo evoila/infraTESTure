@@ -150,6 +150,11 @@ After setting up the configuration.yml you should now be able to run your tests 
 ...
 ```
 
+#### Offline mode
+
+To avoid internet usage a offline mode has been added. It required the tests to be pre compiled as a go plugin in. To build a go plugin run `go build -buildmode=plugin` in the project folder. This will generate a .so file.
+Set the property compiled_tests in your configuration.yml file to match the path to the compiled .so file. In this mode the exact names of the functions must be referenced in your configuration and NOT their annotations.
+
 ### Bring Your Own Tests
 
 This project was designed as a full community driven and generic testing framework for infrastructures and services, which means that you are able to use your very own tests. When writing the code, there are some restrictions you have to follow in order to make the framework work with your tests.

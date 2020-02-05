@@ -12,13 +12,14 @@ type Config struct {
 	Service Service `yaml:"service"`
 	Testing Testing `yaml:"testing"`
 	Bosh Bosh `yaml:"bosh"`
+	PreCompiledPluginPath string `yaml:"compiled_tests"`
 }
 
 type Github struct {
 	TestRepo string `yaml:"test_repo"`
 	Tag string `yaml:"tag"`
-	SavingLocation string `yaml:"saving_location""`
-	RepoName string `yaml:"repo_name""`
+	SavingLocation string `yaml:"saving_location"`
+	RepoName string `yaml:"repo_name"`
 }
 
 type Service struct {
