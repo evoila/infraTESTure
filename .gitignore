@@ -15,3 +15,5 @@ infraTESTure
 configuration.yml
 .builds
 .tmp
+
+\.idea/

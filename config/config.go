@@ -51,6 +51,7 @@ type Bosh struct {
 	UaaClient string `yaml:"uaa_client"`
 	UaaClientSecret string `yaml:"uaa_client_secret"`
 	Ca string `yaml:"ca"`
+	CaFile string `yaml:"ca_file"`
 }
 
 func LoadConfig(path string) (*Config, error) {

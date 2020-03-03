@@ -5,6 +5,7 @@ import (
 	"github.com/cloudfoundry/bosh-cli/uaa"
 	"github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/evoila/infraTESTure/config"
+	"io/ioutil"
 )
 
 var boshDirector director.Director
@@ -24,7 +25,8 @@ func buildDirector(config *config.Config) (director.Director, error) {
 
 	// Configure custom trusted CA certificates.
 	// If nothing is provided default system certificates are used.
-	factoryConfig.CACert = config.Bosh.Ca
+	// If a ca file is provided use the files content instead of the cert from the yaml
+	factoryConfig.CACert = setCa(config)
 
 	// Allow Director to fetch UAA tokens when necessary.
 	boshUaa, err := buildUAA(config)
@@ -52,9 +54,31 @@ func buildUAA(config *config.Config) (uaa.UAA, error) {
 	boshConfig.Client = config.Bosh.UaaClient
 	boshConfig.ClientSecret = config.Bosh.UaaClientSecret
 
-	// Configure trusted CA certificates.
+	// Configure custom trusted CA certificates.
 	// If nothing is provided default system certificates are used.
-	boshConfig.CACert = config.Bosh.Ca
+	// If a ca file is provided use the files content instead of the cert from the yaml
+	boshConfig.CACert = setCa(config)
 
 	return factory.New(boshConfig)
+}
+
+func setCa(config *config.Config) string {
+	var ca = config.Bosh.Ca
+
+	if conf.Bosh.CaFile != "" {
+		println("Using certificate from file: " + conf.Bosh.CaFile)
+
+		ca = readCaFromFile(config.Bosh.CaFile)
+	}
+
+	return ca
+}
+
+func readCaFromFile(pathToCert string) string {
+	content, err := ioutil.ReadFile(pathToCert)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(content)
 }
