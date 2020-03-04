@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"plugin"
-	"runtime"
 	"strings"
 )
 
@@ -71,7 +70,7 @@ func Run(c *cli.Context) error {
 	} else {
 		// Build the given test repository as a go plugin
 		logger.LogInfoF("[INFO] Building go plugin from directory %v\n", serviceDir)
-		cmd := exec.Command("bash", "-c", "cd "+serviceDir+" && "+runtime.Version()+" build -buildmode=plugin")
+		cmd := exec.Command("bash", "-c", "cd "+serviceDir+" && go build -buildmode=plugin")
 		err = cmd.Run()
 
 		if err != nil {
