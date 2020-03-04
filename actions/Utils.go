@@ -1,15 +1,9 @@
 package actions
 
 import (
-	"github.com/fatih/color"
-	"log"
 	"os/exec"
 	"strings"
 )
-
-func logError(err error, customMessage string) {
-	log.Printf(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
-}
 
 func gitClone(url string, repoPath string, tag string) error {
 	var tagClone string

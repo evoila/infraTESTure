@@ -5,8 +5,9 @@ import (
 	"github.com/evoila/infraTESTure/config"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/evoila/infraTESTure/infrastructure/bosh"
+	"github.com/evoila/infraTESTure/logger"
 	"github.com/urfave/cli"
-	"log"
+	"os"
 	"plugin"
 )
 
@@ -14,17 +15,17 @@ func Offline(c *cli.Context) error {
 	conf, err := config.LoadConfig(c.String("config"))
 
 	if err != nil {
-		logError(err, "")
+		logger.LogError(err, "")
 		return err
 	}
 
 	bosh.InitInfrastructureValues(conf)
 
-	log.Printf("[INFO] Loading go plugin...")
+	logger.LogInfo("[INFO] Loading go plugin...")
 	p, err := plugin.Open(conf.PreCompiledPluginPath)
 
 	if err != nil {
-		logError(err, "Could not load go plugin")
+		logger.LogError(err, "Could not load go plugin")
 		return err
 	}
 
@@ -36,7 +37,7 @@ func Offline(c *cli.Context) error {
 		symbol, err := p.Lookup(test.Name)
 
 		if err != nil {
-			logError(err, "")
+			logger.LogError(err, "")
 			return err
 		}
 
@@ -54,10 +55,10 @@ func Offline(c *cli.Context) error {
 			failed++
 		}
 	}
-
 	fmt.Printf("\033[1;34m%s\033[0m", "\n##### Result #####\n")
+	logger.LogInfoF("[INFO] %d of %d tests succeeded", successful, successful+failed)
 
-	log.Printf("[INFO] %d of %d tests succeeded", successful, successful+failed)
+	os.Exit(failed)
 
 	return nil
 }

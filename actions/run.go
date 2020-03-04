@@ -5,10 +5,10 @@ import (
 	"github.com/evoila/infraTESTure/config"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/evoila/infraTESTure/infrastructure/bosh"
+	"github.com/evoila/infraTESTure/logger"
 	"github.com/evoila/infraTESTure/parser"
 	"github.com/urfave/cli"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"plugin"
@@ -20,7 +20,7 @@ func Run(c *cli.Context) error {
 	conf, err := config.LoadConfig(c.String("config"))
 
 	if err != nil {
-		logError(err, "")
+		logger.LogError(err, "")
 		return err
 	}
 
@@ -39,21 +39,21 @@ func Run(c *cli.Context) error {
 		err = cmd.Run()
 
 		if err != nil {
-			logError(err, "")
+			logger.LogError(err, "")
 			return err
 		}
 	}
 
 	// Check if the repository is already cloned, and if so use this repository
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		log.Printf("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
+		logger.LogInfoF("[INFO] Cloning repository from %v\n", conf.Github.TestRepo)
 		err = gitClone(conf.Github.TestRepo, repoPath, conf.Github.Tag)
 		if err != nil {
-			logError(err, "Could not clone repository")
+			logger.LogError(err, "Could not clone repository")
 			return err
 		}
 	} else {
-		log.Printf("[INFO] Using existing repository %v\n", repoPath)
+		logger.LogInfoF("[INFO] Using existing repository %v\n", repoPath)
 	}
 
 	serviceDir := repoPath + "/" + conf.Service.Name
@@ -65,25 +65,25 @@ func Run(c *cli.Context) error {
 		err = cmd.Run()
 
 		if err != nil {
-			logError(err, "Could not open test file")
+			logger.LogError(err, "Could not open test file")
 			return err
 		}
 	} else {
 		// Build the given test repository as a go plugin
-		log.Printf("[INFO] Building go plugin from directory %v\n", serviceDir)
+		logger.LogInfoF("[INFO] Building go plugin from directory %v\n", serviceDir)
 		cmd := exec.Command("bash", "-c", "cd "+serviceDir+" && "+runtime.Version()+" build -buildmode=plugin")
 		err = cmd.Run()
 
 		if err != nil {
-			logError(err, "Could not build go plugin")
+			logger.LogError(err, "Could not build go plugin")
 			return err
 		}
 
-		log.Printf("[INFO] Loading go plugin...")
+		logger.LogInfoF("[INFO] Loading go plugin...")
 		p, err := plugin.Open(serviceDir + "/" + conf.Service.Name + ".so")
 
 		if err != nil {
-			logError(err, "Could not load go plugin")
+			logger.LogError(err, "Could not load go plugin")
 			return err
 		}
 
@@ -92,7 +92,7 @@ func Run(c *cli.Context) error {
 		files, err := ioutil.ReadDir(serviceDir)
 
 		if err != nil {
-			logError(err, "Could not load service directory")
+			logger.LogError(err, "Could not load service directory")
 			return err
 		}
 
@@ -104,7 +104,7 @@ func Run(c *cli.Context) error {
 					newFunctionNames, err := parser.GetFunctionNames(test, appendSlash(serviceDir)+file.Name())
 
 					if err != nil {
-						logError(err, "")
+						logger.LogError(err, "")
 						return err
 					}
 
@@ -121,7 +121,7 @@ func Run(c *cli.Context) error {
 			symbol, err := p.Lookup(function)
 
 			if err != nil {
-				logError(err, "")
+				logger.LogError(err, "")
 				return err
 			}
 
@@ -142,7 +142,7 @@ func Run(c *cli.Context) error {
 
 		fmt.Printf("\033[1;34m%s\033[0m", "\n##### Result #####\n")
 
-		log.Printf("[INFO] %d of %d tests succeeded", successful, successful+failed)
+		logger.LogInfoF("[INFO] %d of %d tests succeeded", successful, successful+failed)
 	}
 
 	return nil

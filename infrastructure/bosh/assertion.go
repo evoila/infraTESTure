@@ -2,8 +2,8 @@ package bosh
 
 import (
 	"fmt"
+	"github.com/evoila/infraTESTure/logger"
 	"github.com/fatih/color"
-	"log"
 )
 
 func (b *Bosh) AssertEquals(actual interface{}, expected interface{}) bool {
@@ -38,7 +38,6 @@ func (b *Bosh) AssertFalse(value bool) bool {
 	return true
 }
 
-
 func (b *Bosh) AssertNil(value interface{}) bool {
 	if value != nil {
 		return fail(fmt.Sprintf("Value expected to be nil but was %v", value))
@@ -56,7 +55,7 @@ func (b *Bosh) AssertNotNil(value interface{}) bool {
 }
 
 func fail(message string) bool {
-	log.Printf(color.RedString("[ASSERTION ERROR] " + message))
+	logger.LogErrorF(color.RedString("[ASSERTION ERROR] " + message))
 
 	return false
 }

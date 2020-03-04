@@ -66,8 +66,6 @@ func setCa(config *config.Config) string {
 	var ca = config.Bosh.Ca
 
 	if conf.Bosh.CaFile != "" {
-		println("Using certificate from file: " + conf.Bosh.CaFile)
-
 		ca = readCaFromFile(config.Bosh.CaFile)
 	}
 
