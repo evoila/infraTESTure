@@ -1,11 +1,12 @@
 package bosh
 
 import (
+	"math"
+	"strings"
+
 	"github.com/cloudfoundry/bosh-cli/director"
 	"github.com/evoila/infraTESTure/infrastructure"
 	"github.com/evoila/infraTESTure/logger"
-	"math"
-	"strings"
 )
 
 // Return a map of all IPs of the deployment with the VM ID as the key, and all affiliated IPs as the value
@@ -81,7 +82,8 @@ func (b *Bosh) IsRunning() bool {
 
 // Stop a VM based on the VM ID
 func (b *Bosh) Stop(id string) {
-	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StopOpts{
+	serviceName, instanceId := splitServiceNameAndInstanceId(id)
+	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug(serviceName, instanceId), director.StopOpts{
 		Converge: true,
 	})
 
@@ -93,7 +95,8 @@ func (b *Bosh) Stop(id string) {
 // Start a VM based on the VM ID
 func (b *Bosh) Start(id string) {
 	// Restart a stopped VM
-	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StartOpts{
+	serviceName, instanceId := splitServiceNameAndInstanceId(id)
+	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug(serviceName, instanceId), director.StartOpts{
 		Converge: true,
 	})
 
@@ -121,4 +124,13 @@ func ParseDiskSize(vmId string) (used string, available string) {
 	}
 
 	return "", ""
+}
+
+func splitServiceNameAndInstanceId(id string) (serviceName string, instanceId string) {
+	splitted := strings.Split(id, "/")
+	if len(splitted) > 1 {
+		return splitted[0], splitted[1]
+	} else {
+		return "", id
+	}
 }
