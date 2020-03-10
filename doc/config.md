@@ -37,7 +37,9 @@ type Config struct {
 func LoadConfig(path string) (*Config, error)
 ```
 Parse the content of a configuration file to the above go structs 
+
 @param path Path to the configuration file 
+
 @return config Config struct containing the information from the configuration file
 
 #### type Credentials
