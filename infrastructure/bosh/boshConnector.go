@@ -11,7 +11,10 @@ var boshDirector director.Director
 var deployment director.Deployment
 var deploymentName string
 
-func buildDirector(config *config.Config) (director.Director, error) {
+// Build a Director based on the director URL from the configuration
+// @param config Initialized config struct from github.com/evoila/infraTESTure/config
+// @return director Initialized director struct from github.com/cloudfoundry/bosh-cli/director
+func BuildDirector(config *config.Config) (director.Director, error) {
 	logs := logger.NewLogger(logger.LevelError)
 	factory := director.NewFactory(logs)
 
@@ -27,7 +30,7 @@ func buildDirector(config *config.Config) (director.Director, error) {
 	factoryConfig.CACert = config.Bosh.Ca
 
 	// Allow Director to fetch UAA tokens when necessary.
-	boshUaa, err := buildUAA(config)
+	boshUaa, err := BuildUAA(config)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +39,10 @@ func buildDirector(config *config.Config) (director.Director, error) {
 	return factory.New(factoryConfig, director.NewNoopTaskReporter(), director.NewNoopFileReporter())
 }
 
-func buildUAA(config *config.Config) (uaa.UAA, error) {
+// Build an UAA based on the UAA URL from the configuration
+// @param config Initialized config struct from github.com/evoila/infraTESTure/config
+// @return uaa Initialized uaa struct from github.com/cloudfoundry/bosh-cli/uaa
+func BuildUAA(config *config.Config) (uaa.UAA, error) {
 	logs := logger.NewLogger(logger.LevelError)
 	factory := uaa.NewFactory(logs)
 

@@ -9,6 +9,7 @@ import (
 )
 
 // Return a map of all IPs of the deployment with the VM ID as the key, and all affiliated IPs as the value
+// @return map Map containing all IPs of the deployment
 func (b *Bosh) GetIPs() map[string][]string {
 	// Get the ips of all VMs of a deployment
 
@@ -30,6 +31,7 @@ func (b *Bosh) GetIPs() map[string][]string {
 }
 
 // Return an own Deployment struct with some important metrics
+// @return deployment Initialized deployment struct from github.com/evoila/infraTESTure/infrastructure
 func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	vmVitals, err := deployment.VMInfos()
 
@@ -64,6 +66,7 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 }
 
 // Check if a VM is running
+// @return bool Bool value telling if the VM is running (true) or not (false)
 func (b *Bosh) IsRunning() bool {
 	vmVitals, err := deployment.VMInfos()
 
@@ -81,6 +84,7 @@ func (b *Bosh) IsRunning() bool {
 }
 
 // Stop a VM based on the VM ID
+// @param id Id of the VM you want to stop
 func (b *Bosh) Stop(id string) {
 	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StopOpts{
 		Converge:    true,
@@ -92,6 +96,7 @@ func (b *Bosh) Stop(id string) {
 }
 
 // Start a VM based on the VM ID
+// @param id Id of the VM you want to start
 func (b *Bosh) Start(id string) {
 	// Restart a stopped VM
 	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StartOpts{
@@ -103,8 +108,10 @@ func (b *Bosh) Start(id string) {
 	}
 }
 
-// SSH to vm and run df command in order to get the free disk space then filter
-// the one needed
+// SSH to vm and run df command in order to get the free disk space then filter the one needed
+// @param vmId Id of the VM you want to determine used and available disk space from
+// @return used Value in bytes of used disk space
+// @return available Value in bytes of available disk space
 func ParseDiskSize(vmId string) (used string, available string){
 	result, err := RunSshCommand(vmId, "df | awk 'NR > 1{print $6\" \"$3\" \"$4 }'")
 
