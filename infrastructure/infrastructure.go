@@ -16,8 +16,8 @@ type Infrastructure interface {
 	SimulatePackageCorruption(int, int) string
 	SimulatePackageDuplication(int, int) string
 	SimulateNetworkDelay(int, int) string
-	AddTrafficControl(string, string, string)
-	RemoveTrafficControl(string)
+	AddTrafficControl(VM, string, string)
+	RemoveTrafficControl(VM)
 	//LimitBandwidth(string, int, string)
 
 	StartCPULoad(string, int)
