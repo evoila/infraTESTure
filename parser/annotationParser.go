@@ -12,6 +12,9 @@ import (
 
 
 // Return a list of all functions whose annotations match with the test names in the config
+// @param test Initialized test struct from github.com/evoila/infraTESTure/config
+// @param path Path to the test project
+// @return []string Name list of available functions in the test project
 func GetFunctionNames(test config.Test, path string) ([]string, error) {
 	var methodNames []string
 
@@ -35,6 +38,8 @@ func GetFunctionNames(test config.Test, path string) ([]string, error) {
 }
 
 // Return a list of all annotations in a given go file
+// @param path Path to the test project
+// @return []string List of annotations from functions within the test project
 func GetAnnotations(path string) []string {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)

@@ -12,6 +12,7 @@ type Bosh struct{}
 var conf *config.Config
 
 // Initialize the Bosh Director and the Deployment affiliated to the deployment name in the config
+// @param config Configuration struct from github.com/evoila/infraTESTure/config
 func InitInfrastructureValues(config *config.Config) {
 	conf = config
 
@@ -20,7 +21,7 @@ func InitInfrastructureValues(config *config.Config) {
 	var err error
 
 	// Create a bosh director to get the deployment
-	boshDirector, err = buildDirector(config)
+	boshDirector, err = BuildDirector(config)
 	if err != nil {
 		logError(err, "")
 	}

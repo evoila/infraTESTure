@@ -9,6 +9,10 @@ import (
 	"os"
 )
 
+// Create a ssh session to a VM
+// @param vmId Id of the VM you want to ssh to
+// @return session Initialized sessions struct of golang.org/x/crypto/ssh
+// @return client Initialized client struct of golang.org/x/crypto/client
 func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, err error){
 	uuidGen := uuid.NewGenerator()
 
@@ -63,6 +67,10 @@ func createSshSession(vmId string) (session *ssh.Session, client *ssh.Client, er
 	return session, client, nil
 }
 
+// Run a ssh command on a VM
+// @param vmId Id of the VM you want to run the command on
+// @param command Command you want to execute on the VM
+// @return string Stdout of the command execution
 func RunSshCommand(vmId string, command string) (string, error) {
 
 	// Create ssh session and client
