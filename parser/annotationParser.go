@@ -2,13 +2,14 @@ package parser
 
 import (
 	"github.com/evoila/infraTESTure/config"
+	"github.com/evoila/infraTESTure/logger"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"log"
 	"strings"
 	"unicode/utf8"
 )
+
 
 // Return a list of all functions whose annotations match with the test names in the config
 // @param test Initialized test struct from github.com/evoila/infraTESTure/config
@@ -43,7 +44,7 @@ func GetAnnotations(path string) []string {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
 	if err != nil {
-		log.Fatal(err)
+		logger.LogFatal(err)
 	}
 
 	// Get a list of all comments in the file

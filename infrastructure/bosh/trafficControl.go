@@ -1,17 +1,22 @@
 package bosh
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/evoila/infraTESTure/infrastructure"
+)
 
 const (
-	netem =	"sudo tc qdisc add dev eth0 root handle 1a1a: htb default 1 && " +
-		"sudo tc class add dev eth0 parent 1a1a: classid 1a1a:1 htb rate 10000000.0kbit && " +
-		"sudo tc class add dev eth0 parent 1a1a: classid 1a1a:2 htb rate 10000000.0Kbit ceil 10000000.0Kbit && " +
-		"sudo tc filter add dev eth0 protocol ip parent 1a1a: prio 1 u32 match ip sport 22 0xffff flowid 1a1a:1 && " +
-		"sudo tc filter add dev eth0 protocol ip parent 1a1a: prio 1 u32 match ip dst %s flowid 1a1a:1 && " +
-		"sudo tc filter add dev eth0 protocol ip parent 1a1a: prio 2 u32 match ip src 0.0.0.0/0 match ip dst 0.0.0.0/0 flowid 1a1a:2 && " +
-		"sudo tc qdisc add dev eth0 parent 1a1a:2 handle 2518: netem %s"
+	netem = "IFACE=`sudo netstat -ie | grep -B1 \"%s\" | head -n1 | awk '{print $1}'` &&" +
+		"sudo tc qdisc add dev $IFACE root handle 1a1a: htb default 1 && " +
+		"sudo tc class add dev $IFACE parent 1a1a: classid 1a1a:1 htb rate 10000000.0kbit && " +
+		"sudo tc class add dev $IFACE parent 1a1a: classid 1a1a:2 htb rate 10000000.0Kbit ceil 10000000.0Kbit && " +
+		"sudo tc filter add dev $IFACE protocol ip parent 1a1a: prio 1 u32 match ip sport 22 0xffff flowid 1a1a:1 && " +
+		"sudo tc filter add dev $IFACE protocol ip parent 1a1a: prio 1 u32 match ip dst %s flowid 1a1a:1 && " +
+		"sudo tc filter add dev $IFACE protocol ip parent 1a1a: prio 2 u32 match ip src 0.0.0.0/0 match ip dst 0.0.0.0/0 flowid 1a1a:2 && " +
+		"sudo tc qdisc add dev $IFACE parent 1a1a:2 handle 2518: netem %s"
 
-	removeTC = "sudo tc qdisc del dev eth0 root"
+	removeTC = "IFACE=`sudo netstat -ie | grep -B1 \"%s\" | head -n1 | awk '{print $1}'` && sudo tc qdisc del dev $IFACE root"
 )
 
 // Create a big dump file with a given size in MB
@@ -58,7 +63,7 @@ func (b *Bosh) SimulatePackageLoss(loss int, correlation int) string {
 // @return string String containing a TC command that can be used as a parameter for the AddTrafficControl function
 func (b *Bosh) SimulatePackageCorruption(corruption int, correlation int) string {
 	if corruption < 0 || corruption > 100 || correlation < 0 || correlation > 100 {
-		logError(nil,"Invalid value. Corruption and correlation cannot be lower than 0 or greater than 100")
+		logError(nil, "Invalid value. Corruption and correlation cannot be lower than 0 or greater than 100")
 		return ""
 	}
 
@@ -77,6 +82,7 @@ func (b *Bosh) SimulatePackageDuplication(duplication int, correlation int) stri
 
 	return fmt.Sprintf("duplicate %d%% %d%%", duplication, correlation)
 }
+
 // Creates tc command for network delay based on given parameters
 // @param delay Value in ms of how the network communication should be delayed
 // @param variation Optional value to variate the delay value
@@ -95,11 +101,12 @@ func (b *Bosh) SimulateNetworkDelay(delay int, variation int) string {
 }
 
 // Open SSH session and run the tc command
-// @param vmId Id of the VM you want to add traffic control to
+// @param vm The VM you want to add traffic control to
 // @param tc String containing the tc command, from one or more of the previous functions.
 // TC commands can be connected. For example you can run the "SimulatePackageLoss" function and afterwards expand the resulting string with "SimulateNetworkDelay"
-func (b *Bosh) AddTrafficControl(vmId string, directorIp string, tc string) {
-	_, err := RunSshCommand(vmId, fmt.Sprintf(netem, directorIp, tc))
+func (b *Bosh) AddTrafficControl(vm infrastructure.VM, directorIp string, tc string) {
+	command := fmt.Sprintf(netem, vm.IPs[0], directorIp, tc)
+	_, err := RunSshCommand(vm.ID, command)
 
 	if err != nil {
 		logError(err, "Failed to simulate traffic control")
@@ -107,9 +114,9 @@ func (b *Bosh) AddTrafficControl(vmId string, directorIp string, tc string) {
 }
 
 // Open SSH session and run command for removing the traffic control
-// @param vmId Id of the VM you want to remove the traffic control from
-func (b *Bosh) RemoveTrafficControl(vmId string) {
-	_, err := RunSshCommand(vmId, removeTC)
+// @param vm The VM you want to remove the traffic control from
+func (b *Bosh) RemoveTrafficControl(vm infrastructure.VM) {
+	_, err := RunSshCommand(vm.ID, fmt.Sprintf(removeTC, vm.IPs[0]))
 
 	if err != nil {
 		logError(err, "Failed to remove Traffic Control")

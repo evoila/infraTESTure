@@ -1,11 +1,12 @@
 package bosh
 
 import (
-	"github.com/cloudfoundry/bosh-cli/director"
-	"github.com/evoila/infraTESTure/infrastructure"
-	"log"
 	"math"
 	"strings"
+
+	"github.com/cloudfoundry/bosh-cli/director"
+	"github.com/evoila/infraTESTure/infrastructure"
+	"github.com/evoila/infraTESTure/logger"
 )
 
 // Return a map of all IPs of the deployment with the VM ID as the key, and all affiliated IPs as the value
@@ -36,24 +37,23 @@ func (b *Bosh) GetDeployment() infrastructure.Deployment {
 	vmVitals, err := deployment.VMInfos()
 
 	if err != nil {
-		log.Printf("[ERROR] %v", err)
+		logger.LogErrorF("[ERROR] %v", err)
 	}
 
 	var vms []infrastructure.VM
 
 	for _, vmVital := range vmVitals {
 		used, available := ParseDiskSize(vmVital.ID)
-
 		vms = append(vms, infrastructure.VM{
 			ServiceName:           vmVital.JobName,
 			ID:                    vmVital.ID,
-			IPs:				   vmVital.IPs,
+			IPs:                   vmVital.IPs,
 			State:                 vmVital.ProcessState,
-			CpuUsage:          	   math.Round(stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys)),
+			CpuUsage:              math.Round(stringToFloat(vmVital.Vitals.CPU.User) + stringToFloat(vmVital.Vitals.CPU.Sys)),
 			MemoryUsagePercentage: stringToFloat(vmVital.Vitals.Mem.Percent),
 			MemoryUsageTotal:      stringToFloat(vmVital.Vitals.Mem.KB),
-			DiskSize:			   stringToFloat(used) + stringToFloat(available),
-			DiskUsageTotal:		   stringToFloat(used),
+			DiskSize:              stringToFloat(used) + stringToFloat(available),
+			DiskUsageTotal:        stringToFloat(used),
 			DiskUsagePercentage:   stringToFloat(vmVital.Vitals.Disk["persistent"].Percent),
 		})
 	}
@@ -71,7 +71,7 @@ func (b *Bosh) IsRunning() bool {
 	vmVitals, err := deployment.VMInfos()
 
 	if err != nil {
-		log.Printf("[ERROR] %v\n", err)
+		logger.LogErrorF("[ERROR] %v\n", err)
 	}
 
 	for _, vmVital := range vmVitals {
@@ -86,8 +86,9 @@ func (b *Bosh) IsRunning() bool {
 // Stop a VM based on the VM ID
 // @param id Id of the VM you want to stop
 func (b *Bosh) Stop(id string) {
-	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StopOpts{
-		Converge:    true,
+	serviceName, instanceId := splitServiceNameAndInstanceId(id)
+	err := deployment.Stop(director.NewAllOrInstanceGroupOrInstanceSlug(serviceName, instanceId), director.StopOpts{
+		Converge: true,
 	})
 
 	if err != nil {
@@ -99,8 +100,9 @@ func (b *Bosh) Stop(id string) {
 // @param id Id of the VM you want to start
 func (b *Bosh) Start(id string) {
 	// Restart a stopped VM
-	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug("", id), director.StartOpts{
-		Converge:    true,
+	serviceName, instanceId := splitServiceNameAndInstanceId(id)
+	err := deployment.Start(director.NewAllOrInstanceGroupOrInstanceSlug(serviceName, instanceId), director.StartOpts{
+		Converge: true,
 	})
 
 	if err != nil {
@@ -129,4 +131,13 @@ func ParseDiskSize(vmId string) (used string, available string){
 	}
 
 	return "", ""
+}
+
+func splitServiceNameAndInstanceId(id string) (serviceName string, instanceId string) {
+	splitted := strings.Split(id, "/")
+	if len(splitted) > 1 {
+		return splitted[0], splitted[1]
+	} else {
+		return "", id
+	}
 }

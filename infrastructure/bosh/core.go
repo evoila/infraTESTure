@@ -2,12 +2,12 @@ package bosh
 
 import (
 	"github.com/evoila/infraTESTure/config"
+	"github.com/evoila/infraTESTure/logger"
 	"github.com/fatih/color"
-	"log"
 	"strconv"
 )
 
-type Bosh struct {}
+type Bosh struct{}
 
 var conf *config.Config
 
@@ -31,18 +31,21 @@ func InitInfrastructureValues(config *config.Config) {
 	if err != nil {
 		logError(err, "")
 	}
-
 }
 
 func logError(err error, customMessage string) {
 	if err != nil {
-		log.Printf(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
+		logger.LogErrorF(color.RedString("[ERROR] " + customMessage + ": " + err.Error()))
 	} else {
-		log.Printf(color.RedString("[ERROR] " + customMessage))
+		logger.LogErrorF(color.RedString("[ERROR] " + customMessage))
 	}
 }
 
 func stringToFloat(value string) float64 {
+	if value == "" {
+		return 0
+	}
+
 	floatValue, err := strconv.ParseFloat(value, 64)
 
 	if err != nil {

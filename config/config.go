@@ -12,13 +12,14 @@ type Config struct {
 	Service Service `yaml:"service"`
 	Testing Testing `yaml:"testing"`
 	Bosh Bosh `yaml:"bosh"`
+	PreCompiledPluginPath string `yaml:"compiled_tests"`
 }
 
 type Github struct {
 	TestRepo string `yaml:"test_repo"`
 	Tag string `yaml:"tag"`
-	SavingLocation string `yaml:"saving_location""`
-	RepoName string `yaml:"repo_name""`
+	SavingLocation string `yaml:"saving_location"`
+	RepoName string `yaml:"repo_name"`
 }
 
 type Service struct {
@@ -50,6 +51,7 @@ type Bosh struct {
 	UaaClient string `yaml:"uaa_client"`
 	UaaClientSecret string `yaml:"uaa_client_secret"`
 	Ca string `yaml:"ca"`
+	CaFile string `yaml:"ca_file"`
 }
 
 // Parse the content of a configuration file to the above go structs
